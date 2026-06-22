@@ -30,9 +30,17 @@ export async function registerUser(
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { email, passwordHash, name, affiliation, phone, role: "AUTHOR" },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: { email, passwordHash, name, affiliation, phone, role: "AUTHOR" },
+    });
+  } catch (e) {
+    if (e instanceof Error && "code" in e && e.code === "P2002") {
+      return { error: "이미 가입된 이메일입니다." };
+    }
+    throw e;
+  }
 
   await logAudit({
     actorId: user.id,

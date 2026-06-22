@@ -11,7 +11,7 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-3">
+      <div className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex flex-col">
             <span className="text-xs font-medium text-gray-500">
