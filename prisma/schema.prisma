@@ -1,0 +1,194 @@
+// 한국게임정책학회(KGPA) 인터랙티브미디어저널 투고/심사 관리 시스템
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  AUTHOR
+  REVIEWER
+  EDITOR
+}
+
+enum VolumeStatus {
+  OPEN
+  CLOSED
+  PUBLISHED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  REVISION_REQUESTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ReviewRecommendation {
+  ACCEPT
+  MINOR_REVISION
+  MAJOR_REVISION
+  REJECT
+}
+
+enum ReviewStatus {
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  DECLINED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  affiliation  String
+  phone        String
+  role         Role     @default(AUTHOR)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  submissions       Submission[]       @relation("AuthorSubmissions")
+  reviewAssignments ReviewAssignment[] @relation("ReviewerAssignments")
+  decisionsMade     Decision[]         @relation("EditorDecisions")
+  notices           Notice[]           @relation("NoticeAuthor")
+  resourcesUploaded Resource[]         @relation("ResourceUploader")
+  auditLogs         AuditLog[]         @relation("AuditActor")
+}
+
+model Volume {
+  id                 String       @id @default(cuid())
+  label              String // 예: "Vol.15 No.2"
+  callStartDate      DateTime // 공식 투고 모집 시작일
+  callEndDate        DateTime // 공식 투고 모집 종료일
+  plannedPublishDate DateTime // 발간예정일
+  status             VolumeStatus @default(OPEN)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  submissions Submission[]
+}
+
+model Submission {
+  id        String           @id @default(cuid())
+  title     String
+  abstract  String
+  keywords  String[]
+  status    SubmissionStatus @default(SUBMITTED)
+  authorId  String
+  author    User             @relation("AuthorSubmissions", fields: [authorId], references: [id])
+  volumeId  String
+  volume    Volume           @relation(fields: [volumeId], references: [id])
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  files       SubmissionFile[]
+  assignments ReviewAssignment[]
+  decisions   Decision[]
+  statusLogs  StatusLog[]
+}
+
+model SubmissionFile {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  version      Int        @default(1)
+  originalName String
+  storedPath   String
+  mimeType     String
+  sizeBytes    Int
+  uploadedAt   DateTime   @default(now())
+}
+
+model ReviewAssignment {
+  id           String       @id @default(cuid())
+  submissionId String
+  submission   Submission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User         @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+  status       ReviewStatus @default(ASSIGNED)
+  assignedAt   DateTime     @default(now())
+  dueDate      DateTime?
+  review       Review?
+
+  @@unique([submissionId, reviewerId])
+}
+
+model Review {
+  id               String               @id @default(cuid())
+  assignmentId     String               @unique
+  assignment       ReviewAssignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  score            Int?
+  commentsToAuthor String
+  commentsToEditor String?
+  recommendation   ReviewRecommendation
+  submittedAt      DateTime             @default(now())
+}
+
+model Decision {
+  id           String           @id @default(cuid())
+  submissionId String
+  submission   Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  editorId     String
+  editor       User             @relation("EditorDecisions", fields: [editorId], references: [id])
+  outcome      SubmissionStatus
+  note         String?
+  decidedAt    DateTime         @default(now())
+}
+
+model StatusLog {
+  id           String            @id @default(cuid())
+  submissionId String
+  submission   Submission        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  fromStatus   SubmissionStatus?
+  toStatus     SubmissionStatus
+  note         String?
+  changedAt    DateTime          @default(now())
+}
+
+model Notice {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  isPinned  Boolean  @default(false)
+  authorId  String
+  author    User     @relation("NoticeAuthor", fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Resource {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  originalName String
+  storedPath   String
+  mimeType     String
+  sizeBytes    Int
+  uploadedById String
+  uploadedBy   User     @relation("ResourceUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id])
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([targetType, targetId])
+}

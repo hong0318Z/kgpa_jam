@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kgpa
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: kgpa_jam
+    volumes:
+      - /volume1/docker/kgpa_jam/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kgpa -d kgpa_jam"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://kgpa:${DB_PASSWORD}@db:5432/kgpa_jam?schema=public
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - /volume1/docker/kgpa_jam/uploads:/app/uploads
+    ports:
+      - "3000:3000"
