@@ -34,8 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
-# uploaded files
+# uploaded files / local docker volumes
 /uploads
+/data
 
 # vercel
 .vercel

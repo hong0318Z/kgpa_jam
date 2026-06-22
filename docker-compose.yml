@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: kgpa_jam
     volumes:
-      - /volume1/docker/kgpa_jam/pgdata:/var/lib/postgresql/data
+      - ${PGDATA_DIR:-./data/pgdata}:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kgpa -d kgpa_jam"]
       interval: 5s
@@ -26,6 +26,6 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       UPLOAD_DIR: /app/uploads
     volumes:
-      - /volume1/docker/kgpa_jam/uploads:/app/uploads
+      - ${UPLOADS_DIR:-./data/uploads}:/app/uploads
     ports:
       - "3000:3000"
