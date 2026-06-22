@@ -24,6 +24,7 @@ services:
       DATABASE_URL: postgresql://kgpa:${DB_PASSWORD}@db:5432/kgpa_jam?schema=public
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
+      AUTH_TRUST_HOST: "true"
       UPLOAD_DIR: /app/uploads
     volumes:
       - ${UPLOADS_DIR:-./data/uploads}:/app/uploads
