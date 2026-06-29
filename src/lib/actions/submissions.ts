@@ -1,18 +1,22 @@
 "use server";
 
+import path from "path";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { requireRole, requireSession, ForbiddenError } from "@/lib/rbac";
+import { requireRole, requireSession, ForbiddenError, ADMIN_ROLES } from "@/lib/rbac";
 import { saveUploadedFile } from "@/lib/storage";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
+import type { CoauthorInput } from "@/lib/actions/submission-authors";
+
+const ALLOWED_EXT = [".pdf", ".hwp", ".docx"];
 
 export async function createSubmission(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await requireRole(["AUTHOR", "EDITOR"]);
+  const session = await requireRole(["AUTHOR", ...ADMIN_ROLES]);
 
   const title = String(formData.get("title") ?? "").trim();
   const abstract = String(formData.get("abstract") ?? "").trim();
@@ -22,15 +26,22 @@ export async function createSubmission(
     .filter(Boolean);
   const volumeId = String(formData.get("volumeId") ?? "");
   const file = formData.get("file") as File | null;
+  const coauthorsRaw = String(formData.get("coauthors") ?? "[]");
+  let coauthors: CoauthorInput[] = [];
+  try {
+    coauthors = JSON.parse(coauthorsRaw);
+  } catch {
+    coauthors = [];
+  }
 
   if (!title || !abstract || !volumeId) {
     return { error: "제목, 초록, 투고 호(Volume)를 모두 입력해 주세요." };
   }
   if (!file || file.size === 0) {
-    return { error: "논문 파일(PDF)을 첨부해 주세요." };
+    return { error: "논문 파일을 첨부해 주세요." };
   }
-  if (file.type !== "application/pdf") {
-    return { error: "PDF 파일만 업로드할 수 있습니다." };
+  if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
+    return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
   }
   if (file.size > 20 * 1024 * 1024) {
     return { error: "파일 크기는 20MB를 초과할 수 없습니다." };
@@ -59,6 +70,20 @@ export async function createSubmission(
     data: { submissionId: submission.id, toStatus: "SUBMITTED" },
   });
 
+  if (coauthors.length > 0) {
+    await prisma.submissionAuthor.createMany({
+      data: coauthors.map((a, i) => ({
+        submissionId: submission.id,
+        userId: a.userId ?? null,
+        name: a.name,
+        email: a.email,
+        affiliation: a.affiliation,
+        isCorresponding: a.isCorresponding,
+        order: i,
+      })),
+    });
+  }
+
   await logAudit({
     actorId: session.user.id,
     action: "SUBMISSION_CREATED",
@@ -83,7 +108,7 @@ export async function uploadRevision(submissionId: string, formData: FormData) {
     where: { id: submissionId },
   });
   if (
-    session.user.role !== "EDITOR" &&
+    !ADMIN_ROLES.includes(session.user.role) &&
     submission.authorId !== session.user.id
   ) {
     throw new ForbiddenError("본인의 투고만 수정할 수 있습니다.");
@@ -91,7 +116,7 @@ export async function uploadRevision(submissionId: string, formData: FormData) {
 
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) return;
-  if (file.type !== "application/pdf") return;
+  if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) return;
 
   const latest = await prisma.submissionFile.findFirst({
     where: { submissionId },
@@ -116,7 +141,7 @@ export async function uploadRevision(submissionId: string, formData: FormData) {
 }
 
 export async function assignReviewer(submissionId: string, reviewerId: string) {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
 
   await prisma.reviewAssignment.create({
     data: { submissionId, reviewerId },
@@ -151,7 +176,7 @@ export async function assignReviewer(submissionId: string, reviewerId: string) {
 }
 
 export async function unassignReviewer(assignmentId: string) {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
   const assignment = await prisma.reviewAssignment.delete({
     where: { id: assignmentId },
   });
@@ -172,7 +197,7 @@ export async function makeDecision(
   outcome: "ACCEPTED" | "REVISION_REQUESTED" | "REJECTED",
   note: string,
 ) {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
 
   const submission = await prisma.submission.findUniqueOrThrow({
     where: { id: submissionId },

@@ -7,7 +7,7 @@ export default function NewResourcePage() {
   const [state, formAction, pending] = useActionState(createResource, {});
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-4xl">
       <h1 className="mb-6 text-xl font-bold text-gray-900">자료 업로드</h1>
       <form action={formAction} className="flex flex-col gap-4">
         <div>

@@ -1,0 +1,24 @@
+"use client";
+
+import { useActionState } from "react";
+import { changePassword } from "@/lib/actions/account";
+import { PasswordInput } from "@/components/password-input";
+
+export function ChangePasswordForm() {
+  const [state, formAction, pending] = useActionState(changePassword, {});
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <PasswordInput name="currentPassword" required label="현재 비밀번호" />
+      <PasswordInput name="newPassword" required minLength={8} label="새 비밀번호 (8자 이상)" />
+      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+      >
+        {pending ? "변경 중..." : "비밀번호 변경"}
+      </button>
+    </form>
+  );
+}

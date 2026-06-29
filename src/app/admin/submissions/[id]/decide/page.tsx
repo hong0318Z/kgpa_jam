@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { DecisionForm } from "./decision-form";
 
@@ -8,7 +8,7 @@ export default async function DecideSubmissionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole(["EDITOR"]);
+  await requireRole(ADMIN_ROLES);
   const { id } = await params;
 
   const submission = await prisma.submission.findUnique({

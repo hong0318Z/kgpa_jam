@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { deleteResource } from "@/lib/actions/resources";
+import { ADMIN_ROLES } from "@/lib/rbac";
 
 export default async function ResourcesPage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function ResourcesPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">자료실 (투고양식 다운로드)</h1>
-        {session?.user.role === "EDITOR" && (
+        {session?.user && ADMIN_ROLES.includes(session.user.role) && (
           <Link
             href="/admin/resources/new"
             className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
@@ -38,7 +39,7 @@ export default async function ResourcesPage() {
                 {r.uploadedBy.name} · {r.createdAt.toLocaleString("ko-KR")}
               </p>
             </div>
-            {session?.user.role === "EDITOR" && (
+            {session?.user && ADMIN_ROLES.includes(session.user.role) && (
               <form
                 action={async () => {
                   "use server";

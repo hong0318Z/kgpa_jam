@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { ADMIN_ROLES } from "@/lib/rbac";
 
 const NAV_LINKS = [
   { href: "/notices", label: "공지사항" },
@@ -39,11 +40,14 @@ export async function SiteHeader() {
                     내 심사
                   </Link>
                 )}
-                {session.user.role === "EDITOR" && (
+                {ADMIN_ROLES.includes(session.user.role) && (
                   <Link href="/admin/submissions" className="text-gray-700 hover:underline">
                     관리자
                   </Link>
                 )}
+                <Link href="/account" className="text-gray-700 hover:underline">
+                  계정 설정
+                </Link>
                 <span className="text-gray-500">{session.user.name}님</span>
                 <form
                   action={async () => {

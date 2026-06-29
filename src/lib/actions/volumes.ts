@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
@@ -12,7 +12,7 @@ export async function createVolume(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
 
   const label = String(formData.get("label") ?? "").trim();
   const callStartDate = String(formData.get("callStartDate") ?? "");
@@ -44,7 +44,7 @@ export async function createVolume(
 }
 
 export async function updateVolumeStatus(volumeId: string, status: VolumeStatus) {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
 
   await prisma.volume.update({ where: { id: volumeId }, data: { status } });
 

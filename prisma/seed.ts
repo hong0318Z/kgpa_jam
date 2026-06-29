@@ -60,6 +60,20 @@ async function main() {
     },
   });
 
+  const adminPasswordHash = await bcrypt.hash("admin1234", 10);
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@admin.com" },
+    update: {},
+    create: {
+      email: "admin@admin.com",
+      passwordHash: adminPasswordHash,
+      name: "관리자",
+      affiliation: "한국게임정책학회",
+      phone: "02-0000-0000",
+      role: "ADMIN",
+    },
+  });
+
   const volume = await prisma.volume.upsert({
     where: { id: "seed-volume-1" },
     update: {},
@@ -87,6 +101,7 @@ async function main() {
   });
 
   console.log("Seed complete:", {
+    admin: admin.email,
     editor: editor.email,
     reviewer1: reviewer1.email,
     reviewer2: reviewer2.email,

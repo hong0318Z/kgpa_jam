@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "투고완료",
@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function SubmissionsPage() {
-  const session = await requireRole(["AUTHOR", "EDITOR"]);
+  const session = await requireRole(["AUTHOR", ...ADMIN_ROLES]);
   const submissions = await prisma.submission.findMany({
     where: { authorId: session.user.id },
     include: { volume: true },

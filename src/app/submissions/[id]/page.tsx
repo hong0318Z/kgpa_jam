@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { requireSession, ForbiddenError } from "@/lib/rbac";
+import { requireSession, ForbiddenError, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { RevisionUploadForm } from "./revision-upload-form";
+import { CoauthorEditor } from "./coauthor-editor";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "투고완료",
@@ -30,6 +31,7 @@ export default async function SubmissionDetailPage({
       assignments: {
         include: { review: true, reviewer: true },
       },
+      coauthors: { orderBy: { order: "asc" } },
     },
   });
   if (!submission) notFound();
@@ -38,7 +40,7 @@ export default async function SubmissionDetailPage({
     throw new ForbiddenError("본인의 투고만 조회할 수 있습니다.");
   }
 
-  const isEditor = session.user.role === "EDITOR";
+  const isEditor = ADMIN_ROLES.includes(session.user.role);
   const isOwner = submission.authorId === session.user.id;
 
   return (
@@ -56,6 +58,28 @@ export default async function SubmissionDetailPage({
         </p>
         <p className="mt-4 whitespace-pre-wrap text-sm text-gray-800">{submission.abstract}</p>
         <p className="mt-2 text-xs text-gray-500">키워드: {submission.keywords.join(", ")}</p>
+        {submission.coauthors.length > 0 && (
+          <p className="mt-2 text-xs text-gray-500">
+            공저자:{" "}
+            {submission.coauthors
+              .map((a) => `${a.name}${a.isCorresponding ? " (교신저자)" : ""}`)
+              .join(", ")}
+          </p>
+        )}
+        {(isOwner || isEditor) && (
+          <div className="mt-3">
+            <CoauthorEditor
+              submissionId={submission.id}
+              initialAuthors={submission.coauthors.map((a) => ({
+                userId: a.userId,
+                name: a.name,
+                email: a.email,
+                affiliation: a.affiliation,
+                isCorresponding: a.isCorresponding,
+              }))}
+            />
+          </div>
+        )}
       </div>
 
       <div className="rounded border border-gray-200 bg-white p-6">

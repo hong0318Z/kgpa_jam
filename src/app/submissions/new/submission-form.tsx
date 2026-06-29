@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { createSubmission } from "@/lib/actions/submissions";
+import { FileDropzone } from "@/components/file-dropzone";
+import { CoauthorPicker } from "@/components/coauthor-picker";
 
 type Volume = {
   id: string;
@@ -44,8 +46,17 @@ export function SubmissionForm({ volumes }: { volumes: Volume[] }) {
         <input name="keywords" className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">논문 파일 (PDF)</label>
-        <input name="file" type="file" accept="application/pdf" required className="w-full text-sm" />
+        <label className="mb-1 block text-sm font-medium text-gray-700">공저자</label>
+        <CoauthorPicker name="coauthors" />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">논문 파일</label>
+        <FileDropzone
+          name="file"
+          accept=".pdf,.hwp,.docx"
+          required
+          hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
+        />
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button

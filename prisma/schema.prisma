@@ -13,6 +13,8 @@ enum Role {
   AUTHOR
   REVIEWER
   EDITOR
+  CHIEF_EDITOR
+  ADMIN
 }
 
 enum VolumeStatus {
@@ -53,6 +55,7 @@ model User {
   phone        String
   role         Role     @default(AUTHOR)
   isActive     Boolean  @default(true)
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -62,6 +65,7 @@ model User {
   notices           Notice[]           @relation("NoticeAuthor")
   resourcesUploaded Resource[]         @relation("ResourceUploader")
   auditLogs         AuditLog[]         @relation("AuditActor")
+  coauthorEntries   SubmissionAuthor[] @relation("SubmissionAuthorUser")
 }
 
 model Volume {
@@ -94,6 +98,7 @@ model Submission {
   assignments ReviewAssignment[]
   decisions   Decision[]
   statusLogs  StatusLog[]
+  coauthors   SubmissionAuthor[]
 }
 
 model SubmissionFile {
@@ -176,6 +181,22 @@ model Resource {
   uploadedById String
   uploadedBy   User     @relation("ResourceUploader", fields: [uploadedById], references: [id])
   createdAt    DateTime @default(now())
+}
+
+model SubmissionAuthor {
+  id              String     @id @default(cuid())
+  submissionId    String
+  submission      Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?      @relation("SubmissionAuthorUser", fields: [userId], references: [id])
+  name            String
+  email           String
+  affiliation     String
+  isCorresponding Boolean    @default(false)
+  order           Int
+  createdAt       DateTime   @default(now())
+
+  @@index([submissionId])
 }
 
 model AuditLog {

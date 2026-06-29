@@ -1,11 +1,19 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { ADMIN_ROLES } from "@/lib/rbac";
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const role = req.auth?.user?.role;
 
-  if (pathname.startsWith("/admin") && role !== "EDITOR") {
+  if (
+    req.auth?.user?.mustChangePassword &&
+    pathname !== "/account/change-password"
+  ) {
+    return NextResponse.redirect(new URL("/account/change-password", req.url));
+  }
+
+  if (pathname.startsWith("/admin") && !(role && ADMIN_ROLES.includes(role))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
   if (pathname.startsWith("/reviews") && role !== "REVIEWER") {
@@ -17,5 +25,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/reviews/:path*", "/submissions/:path*"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

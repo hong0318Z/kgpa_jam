@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { readStoredFile } from "@/lib/storage";
+import { ADMIN_ROLES } from "@/lib/rbac";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,7 @@ export async function GET(
 
   const { submission } = file;
   const isOwner = submission.authorId === session.user.id;
-  const isEditor = session.user.role === "EDITOR";
+  const isEditor = ADMIN_ROLES.includes(session.user.role);
   const isAssignedReviewer = submission.assignments.some(
     (a) => a.reviewerId === session.user.id,
   );

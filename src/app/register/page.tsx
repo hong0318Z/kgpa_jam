@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { registerUser } from "@/lib/actions/auth";
+import { PasswordInput } from "@/components/password-input";
 
 export default function RegisterPage() {
   const [state, formAction, pending] = useActionState(registerUser, {});
@@ -26,10 +27,7 @@ export default function RegisterPage() {
           <label className="mb-1 block text-sm font-medium text-gray-700">이메일</label>
           <input name="email" type="email" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">비밀번호 (8자 이상)</label>
-          <input name="password" type="password" required minLength={8} className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
-        </div>
+        <PasswordInput name="password" required minLength={8} label="비밀번호 (8자 이상)" />
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
           type="submit"

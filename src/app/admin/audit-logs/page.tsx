@@ -1,13 +1,21 @@
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
+import {
+  AUDIT_ACTION_LABELS,
+  buildTargetLookup,
+  formatAuditMetadata,
+  formatAuditTarget,
+  type AuditAction,
+} from "@/lib/audit";
 
 export default async function AuditLogsPage() {
-  await requireRole(["EDITOR"]);
+  await requireRole(ADMIN_ROLES);
   const logs = await prisma.auditLog.findMany({
     include: { actor: true },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
+  const lookup = await buildTargetLookup(logs);
 
   return (
     <div>
@@ -32,12 +40,12 @@ export default async function AuditLogsPage() {
                 {log.createdAt.toLocaleString("ko-KR")}
               </td>
               <td className="px-4 py-2 text-gray-700">{log.actor?.name ?? "-"}</td>
-              <td className="px-4 py-2 font-medium text-gray-900">{log.action}</td>
-              <td className="px-4 py-2 text-gray-600">
-                {log.targetType ? `${log.targetType}:${log.targetId}` : "-"}
+              <td className="px-4 py-2 font-medium text-gray-900">
+                {AUDIT_ACTION_LABELS[log.action as AuditAction] ?? log.action}
               </td>
+              <td className="px-4 py-2 text-gray-600">{formatAuditTarget(log, lookup)}</td>
               <td className="px-4 py-2 text-xs text-gray-500">
-                {log.metadata ? JSON.stringify(log.metadata) : "-"}
+                {formatAuditMetadata(log.action as AuditAction, log.metadata, lookup)}
               </td>
             </tr>
           ))}

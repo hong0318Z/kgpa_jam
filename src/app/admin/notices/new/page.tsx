@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 import { createNotice } from "@/lib/actions/notices";
+import { MarkdownImageTextarea } from "@/components/markdown-image-textarea";
 
 export default function NewNoticePage() {
   const [state, formAction, pending] = useActionState(createNotice, {});
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-4xl">
       <h1 className="mb-6 text-xl font-bold text-gray-900">새 공지사항 작성</h1>
       <form action={formAction} className="flex flex-col gap-4">
         <div>
@@ -16,7 +17,7 @@ export default function NewNoticePage() {
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">내용</label>
-          <textarea name="content" required rows={8} className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
+          <MarkdownImageTextarea name="content" rows={12} />
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input type="checkbox" name="isPinned" />

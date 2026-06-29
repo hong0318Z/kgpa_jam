@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { ADMIN_ROLES } from "@/lib/rbac";
 
 export default async function NoticesPage() {
   const session = await auth();
@@ -13,7 +14,7 @@ export default async function NoticesPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">공지사항</h1>
-        {session?.user.role === "EDITOR" && (
+        {session?.user && ADMIN_ROLES.includes(session.user.role) && (
           <Link
             href="/admin/notices/new"
             className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"

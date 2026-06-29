@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { SubmissionForm } from "./submission-form";
 
 export default async function NewSubmissionPage() {
-  await requireRole(["AUTHOR", "EDITOR"]);
+  await requireRole(["AUTHOR", ...ADMIN_ROLES]);
   const volumes = await prisma.volume.findMany({
     where: { status: "OPEN" },
     orderBy: { callStartDate: "desc" },

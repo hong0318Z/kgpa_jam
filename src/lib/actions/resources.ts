@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { saveUploadedFile } from "@/lib/storage";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -12,7 +12,7 @@ export async function createResource(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -43,7 +43,7 @@ export async function createResource(
 }
 
 export async function deleteResource(resourceId: string) {
-  const session = await requireRole(["EDITOR"]);
+  const session = await requireRole(ADMIN_ROLES);
 
   await prisma.resource.delete({ where: { id: resourceId } });
 

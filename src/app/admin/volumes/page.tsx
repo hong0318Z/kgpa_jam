@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { updateVolumeStatus } from "@/lib/actions/volumes";
 
 export default async function AdminVolumesPage() {
-  await requireRole(["EDITOR"]);
+  await requireRole(ADMIN_ROLES);
   const volumes = await prisma.volume.findMany({ orderBy: { callStartDate: "desc" } });
 
   return (

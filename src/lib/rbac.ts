@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import type { Role } from "@/generated/prisma/client";
 
+export const ADMIN_ROLES: Role[] = ["EDITOR", "CHIEF_EDITOR", "ADMIN"];
+
 export class ForbiddenError extends Error {
   status = 403;
 }

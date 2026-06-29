@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { deleteNotice } from "@/lib/actions/notices";
 import { notFound, redirect } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import { ADMIN_ROLES } from "@/lib/rbac";
 
 export default async function NoticeDetailPage({
   params,
@@ -22,8 +24,10 @@ export default async function NoticeDetailPage({
       <p className="mt-1 text-xs text-gray-500">
         {notice.author.name} · {notice.createdAt.toLocaleString("ko-KR")}
       </p>
-      <div className="mt-4 whitespace-pre-wrap text-sm text-gray-800">{notice.content}</div>
-      {session?.user.role === "EDITOR" && (
+      <div className="mt-4 text-sm leading-relaxed text-gray-800 [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded [&_p]:mb-3">
+        <ReactMarkdown>{notice.content}</ReactMarkdown>
+      </div>
+      {session?.user && ADMIN_ROLES.includes(session.user.role) && (
         <form
           action={async () => {
             "use server";

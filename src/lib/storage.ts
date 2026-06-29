@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs/promises";
+import sharp from "sharp";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
 
@@ -28,6 +29,32 @@ export async function saveUploadedFile(
     originalName: file.name,
     sizeBytes: buffer.length,
     mimeType: file.type || "application/octet-stream",
+  };
+}
+
+export async function saveUploadedImage(
+  subDir: string,
+  file: File,
+): Promise<{ storedPath: string; sizeBytes: number; mimeType: string }> {
+  const dir = path.join(UPLOAD_DIR, subDir);
+  await fs.mkdir(dir, { recursive: true });
+
+  const fileName = `${randomUUID()}.webp`;
+  const storedPath = path.join(subDir, fileName);
+  const absolutePath = path.join(UPLOAD_DIR, storedPath);
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+  const outputBuffer = await sharp(inputBuffer)
+    .resize({ width: 1600, withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
+
+  await fs.writeFile(absolutePath, outputBuffer);
+
+  return {
+    storedPath,
+    sizeBytes: outputBuffer.length,
+    mimeType: "image/webp",
   };
 }
 

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { login } from "@/lib/actions/login";
+import { PasswordInput } from "@/components/password-input";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(login, {});
@@ -20,15 +21,7 @@ export default function LoginPage() {
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">비밀번호</label>
-          <input
-            name="password"
-            type="password"
-            required
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
+        <PasswordInput name="password" required label="비밀번호" />
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
           type="submit"

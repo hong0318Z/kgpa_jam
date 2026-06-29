@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 
 const ADMIN_LINKS = [
   { href: "/admin/submissions", label: "투고 관리" },
@@ -11,7 +11,7 @@ const ADMIN_LINKS = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireRole(["EDITOR"]);
+  await requireRole(ADMIN_ROLES);
 
   return (
     <div className="flex flex-col gap-6">
