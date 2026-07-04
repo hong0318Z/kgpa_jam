@@ -22,7 +22,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/node_modules ./node_modules_full
 RUN rm -rf ./node_modules && mv ./node_modules_full ./node_modules
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
