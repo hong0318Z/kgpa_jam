@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 import { createResource } from "@/lib/actions/resources";
+import { FileDropzone } from "@/components/file-dropzone";
 
 export default function NewResourcePage() {
   const [state, formAction, pending] = useActionState(createResource, {});
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="w-full">
       <h1 className="mb-6 text-xl font-bold text-gray-900">자료 업로드</h1>
       <form action={formAction} className="flex flex-col gap-4">
         <div>
@@ -20,7 +21,7 @@ export default function NewResourcePage() {
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">파일</label>
-          <input name="file" type="file" required className="w-full text-sm" />
+          <FileDropzone name="file" accept="*" required hint="첨부할 파일을 선택해 주세요." />
         </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button

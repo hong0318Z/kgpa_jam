@@ -7,7 +7,7 @@ export default function NewVolumePage() {
   const [state, formAction, pending] = useActionState(createVolume, {});
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="w-full">
       <h1 className="mb-6 text-xl font-bold text-gray-900">새 발행 호(Volume) 등록</h1>
       <form action={formAction} className="flex flex-col gap-4">
         <div>

@@ -8,7 +8,7 @@ export default function NewNoticePage() {
   const [state, formAction, pending] = useActionState(createNotice, {});
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="w-full">
       <h1 className="mb-6 text-xl font-bold text-gray-900">새 공지사항 작성</h1>
       <form action={formAction} className="flex flex-col gap-4">
         <div>
