@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
+import { REVIEW_REGULATION_MD, RESEARCH_ETHICS_MD } from "./policy-content";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -97,6 +98,30 @@ async function main() {
         "한국게임정책학회 「인터랙티브미디어저널」 창간호(Vol.1 No.1) 논문을 투고해 주시기 바랍니다. 투고 양식은 자료실에서 다운로드하실 수 있습니다.",
       isPinned: true,
       authorId: editor.id,
+    },
+  });
+
+  await prisma.policy.upsert({
+    where: { slug: "review-regulation" },
+    update: {},
+    create: {
+      slug: "review-regulation",
+      title: "심사규정",
+      content: REVIEW_REGULATION_MD,
+      effectiveDate: new Date("2026-03-01"),
+      updatedById: admin.id,
+    },
+  });
+
+  await prisma.policy.upsert({
+    where: { slug: "research-ethics" },
+    update: {},
+    create: {
+      slug: "research-ethics",
+      title: "연구윤리규정",
+      content: RESEARCH_ETHICS_MD,
+      effectiveDate: new Date("2026-03-01"),
+      updatedById: admin.id,
     },
   });
 

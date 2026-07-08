@@ -66,6 +66,7 @@ model User {
   resourcesUploaded Resource[]         @relation("ResourceUploader")
   auditLogs         AuditLog[]         @relation("AuditActor")
   coauthorEntries   SubmissionAuthor[] @relation("SubmissionAuthorUser")
+  policiesUpdated   Policy[]           @relation("PolicyUpdater")
 }
 
 model Volume {
@@ -197,6 +198,19 @@ model SubmissionAuthor {
   createdAt       DateTime   @default(now())
 
   @@index([submissionId])
+}
+
+model Policy {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  title         String
+  content       String
+  effectiveDate DateTime?
+  revisionDates DateTime[] @default([])
+  updatedById   String?
+  updatedBy     User?      @relation("PolicyUpdater", fields: [updatedById], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 model AuditLog {

@@ -5,6 +5,8 @@ import { ADMIN_ROLES } from "@/lib/rbac";
 const NAV_LINKS = [
   { href: "/notices", label: "공지사항" },
   { href: "/resources", label: "자료실(투고양식)" },
+  { href: "/policies/research-ethics", label: "연구윤리규정" },
+  { href: "/policies/review-regulation", label: "심사규정" },
 ];
 
 export async function SiteHeader() {

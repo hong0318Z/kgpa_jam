@@ -8,6 +8,8 @@ const ADMIN_LINKS = [
   { href: "/admin/audit-logs", label: "감사 로그" },
   { href: "/admin/notices/new", label: "공지 작성" },
   { href: "/admin/resources/new", label: "자료 업로드" },
+  { href: "/admin/policies/research-ethics/edit", label: "연구윤리규정 수정" },
+  { href: "/admin/policies/review-regulation/edit", label: "심사규정 수정" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
