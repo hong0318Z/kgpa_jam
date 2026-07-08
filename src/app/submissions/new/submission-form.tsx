@@ -57,12 +57,15 @@ export function SubmissionForm({
         <CoauthorPicker name="coauthors" />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">논문 파일</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          논문 파일 (본문, 부록자료 등 여러 개 첨부 가능)
+        </label>
         <FileDropzone
           name="file"
           accept=".pdf,.hwp,.docx"
           required
-          hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
+          multiple
+          hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (파일당 최대 20MB)"
         />
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}

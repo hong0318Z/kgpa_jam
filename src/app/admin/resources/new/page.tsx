@@ -14,14 +14,17 @@ export default function NewResourcePage() {
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">제목</label>
           <input name="title" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
+          <p className="mt-1 text-xs text-gray-500">
+            파일을 여러 개 선택하면 각 파일의 원본 이름이 자료 제목으로 사용됩니다.
+          </p>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">설명</label>
           <textarea name="description" rows={3} className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">파일</label>
-          <FileDropzone name="file" accept="*" required hint="첨부할 파일을 선택해 주세요." />
+          <label className="mb-1 block text-sm font-medium text-gray-700">파일 (여러 개 선택 가능)</label>
+          <FileDropzone name="file" accept="*" required multiple hint="첨부할 파일을 선택해 주세요." />
         </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button

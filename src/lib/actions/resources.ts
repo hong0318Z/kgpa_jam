@@ -16,28 +16,31 @@ export async function createResource(
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const file = formData.get("file") as File | null;
+  const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
 
   if (!title) return { error: "제목을 입력해 주세요." };
-  if (!file || file.size === 0) return { error: "파일을 첨부해 주세요." };
+  if (files.length === 0) return { error: "파일을 첨부해 주세요." };
 
-  const saved = await saveUploadedFile("resources", file);
-  const resource = await prisma.resource.create({
-    data: {
-      title,
-      description: description || null,
-      uploadedById: session.user.id,
-      ...saved,
-    },
-  });
+  for (const file of files) {
+    const saved = await saveUploadedFile("resources", file);
+    const resourceTitle = files.length > 1 ? file.name.replace(/\.[^.]+$/, "") : title;
+    const resource = await prisma.resource.create({
+      data: {
+        title: resourceTitle,
+        description: description || null,
+        uploadedById: session.user.id,
+        ...saved,
+      },
+    });
 
-  await logAudit({
-    actorId: session.user.id,
-    action: "RESOURCE_UPLOADED",
-    targetType: "Resource",
-    targetId: resource.id,
-    metadata: { title, originalName: saved.originalName },
-  });
+    await logAudit({
+      actorId: session.user.id,
+      action: "RESOURCE_UPLOADED",
+      targetType: "Resource",
+      targetId: resource.id,
+      metadata: { title: resourceTitle, originalName: saved.originalName },
+    });
+  }
 
   redirect("/resources");
 }

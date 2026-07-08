@@ -12,24 +12,37 @@ export function FileDropzone({
   accept,
   required,
   hint,
+  multiple = false,
 }: {
   name: string;
   accept: string;
   required?: boolean;
   hint?: string;
+  multiple?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
-  const setFromList = (files: FileList | null) => {
-    const f = files?.[0] ?? null;
-    setFile(f);
-    if (inputRef.current && f) {
-      const dt = new DataTransfer();
-      dt.items.add(f);
-      inputRef.current.files = dt.files;
-    }
+  const applyToInput = (list: File[]) => {
+    if (!inputRef.current) return;
+    const dt = new DataTransfer();
+    list.forEach((f) => dt.items.add(f));
+    inputRef.current.files = dt.files;
+  };
+
+  const addFiles = (list: FileList | null) => {
+    if (!list || list.length === 0) return;
+    const incoming = Array.from(list);
+    const next = multiple ? [...files, ...incoming] : incoming.slice(0, 1);
+    setFiles(next);
+    applyToInput(next);
+  };
+
+  const removeAt = (index: number) => {
+    const next = files.filter((_, i) => i !== index);
+    setFiles(next);
+    applyToInput(next);
   };
 
   return (
@@ -39,9 +52,10 @@ export function FileDropzone({
         name={name}
         type="file"
         accept={accept}
-        required={required}
+        required={required && files.length === 0}
+        multiple={multiple}
         className="hidden"
-        onChange={(e) => setFromList(e.target.files)}
+        onChange={(e) => addFiles(e.target.files)}
       />
       <div
         onClick={() => inputRef.current?.click()}
@@ -53,35 +67,41 @@ export function FileDropzone({
         onDrop={(e) => {
           e.preventDefault();
           setDragOver(false);
-          setFromList(e.dataTransfer.files);
+          addFiles(e.dataTransfer.files);
         }}
         className={`flex cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed px-4 py-8 text-center text-sm transition-colors ${
           dragOver ? "border-gray-900 bg-gray-50" : "border-gray-300 hover:bg-gray-50"
         }`}
       >
-        {file ? (
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900">{file.name}</span>
-            <span className="text-xs text-gray-500">({formatSize(file.size)})</span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFile(null);
-                if (inputRef.current) inputRef.current.value = "";
-              }}
-              className="ml-1 text-gray-500 hover:text-red-600"
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <>
-            <p className="text-gray-700">클릭하거나 파일을 끌어다 놓아 업로드</p>
-            {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
-          </>
-        )}
+        <p className="text-gray-700">
+          클릭하거나 파일을 끌어다 놓아 업로드
+          {multiple && files.length > 0 ? " (파일 추가)" : ""}
+        </p>
+        {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
       </div>
+      {files.length > 0 && (
+        <ul className="mt-2 flex flex-col gap-1">
+          {files.map((f, i) => (
+            <li
+              key={`${f.name}-${i}`}
+              className="flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-sm"
+            >
+              <span className="flex-1 truncate font-medium text-gray-900">{f.name}</span>
+              <span className="shrink-0 text-xs text-gray-500">({formatSize(f.size)})</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeAt(i);
+                }}
+                className="shrink-0 text-gray-500 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

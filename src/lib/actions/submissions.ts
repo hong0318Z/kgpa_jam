@@ -26,7 +26,7 @@ export async function createSubmission(
     .filter(Boolean);
   const volumeId = String(formData.get("volumeId") ?? "");
   const pledgeAuthorNames = String(formData.get("pledgeAuthorNames") ?? "").trim();
-  const file = formData.get("file") as File | null;
+  const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
   const coauthorsRaw = String(formData.get("coauthors") ?? "[]");
   let coauthors: CoauthorInput[] = [];
   try {
@@ -41,14 +41,16 @@ export async function createSubmission(
   if (!pledgeAuthorNames) {
     return { error: "연구윤리서약서 동의 및 저자명 입력이 필요합니다." };
   }
-  if (!file || file.size === 0) {
+  if (files.length === 0) {
     return { error: "논문 파일을 첨부해 주세요." };
   }
-  if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
-    return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
-  }
-  if (file.size > 20 * 1024 * 1024) {
-    return { error: "파일 크기는 20MB를 초과할 수 없습니다." };
+  for (const file of files) {
+    if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
+      return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      return { error: "파일 크기는 파일당 20MB를 초과할 수 없습니다." };
+    }
   }
 
   const submission = await prisma.submission.create({
@@ -62,14 +64,18 @@ export async function createSubmission(
     },
   });
 
-  const saved = await saveUploadedFile(submission.id, file);
-  await prisma.submissionFile.create({
-    data: {
-      submissionId: submission.id,
-      version: 1,
-      ...saved,
-    },
-  });
+  const savedFiles = [];
+  for (const file of files) {
+    const saved = await saveUploadedFile(submission.id, file);
+    await prisma.submissionFile.create({
+      data: {
+        submissionId: submission.id,
+        version: 1,
+        ...saved,
+      },
+    });
+    savedFiles.push(saved);
+  }
 
   await prisma.statusLog.create({
     data: { submissionId: submission.id, toStatus: "SUBMITTED" },
@@ -96,13 +102,15 @@ export async function createSubmission(
     targetId: submission.id,
     metadata: { title, volumeId },
   });
-  await logAudit({
-    actorId: session.user.id,
-    action: "FILE_UPLOADED",
-    targetType: "Submission",
-    targetId: submission.id,
-    metadata: { originalName: saved.originalName },
-  });
+  for (const saved of savedFiles) {
+    await logAudit({
+      actorId: session.user.id,
+      action: "FILE_UPLOADED",
+      targetType: "Submission",
+      targetId: submission.id,
+      metadata: { originalName: saved.originalName },
+    });
+  }
 
   redirect(`/submissions/${submission.id}`);
 }
@@ -119,9 +127,11 @@ export async function uploadRevision(submissionId: string, formData: FormData) {
     throw new ForbiddenError("본인의 투고만 수정할 수 있습니다.");
   }
 
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) return;
-  if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) return;
+  const files = formData
+    .getAll("file")
+    .filter((f): f is File => f instanceof File && f.size > 0)
+    .filter((f) => ALLOWED_EXT.includes(path.extname(f.name).toLowerCase()));
+  if (files.length === 0) return;
 
   const latest = await prisma.submissionFile.findFirst({
     where: { submissionId },
@@ -129,18 +139,20 @@ export async function uploadRevision(submissionId: string, formData: FormData) {
   });
   const nextVersion = (latest?.version ?? 0) + 1;
 
-  const saved = await saveUploadedFile(submissionId, file);
-  await prisma.submissionFile.create({
-    data: { submissionId, version: nextVersion, ...saved },
-  });
+  for (const file of files) {
+    const saved = await saveUploadedFile(submissionId, file);
+    await prisma.submissionFile.create({
+      data: { submissionId, version: nextVersion, ...saved },
+    });
 
-  await logAudit({
-    actorId: session.user.id,
-    action: "FILE_UPLOADED",
-    targetType: "Submission",
-    targetId: submissionId,
-    metadata: { originalName: saved.originalName, version: nextVersion },
-  });
+    await logAudit({
+      actorId: session.user.id,
+      action: "FILE_UPLOADED",
+      targetType: "Submission",
+      targetId: submissionId,
+      metadata: { originalName: saved.originalName, version: nextVersion },
+    });
+  }
 
   revalidatePath(`/submissions/${submissionId}`);
 }

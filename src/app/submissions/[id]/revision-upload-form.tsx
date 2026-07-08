@@ -16,7 +16,13 @@ export function RevisionUploadForm({ submissionId }: { submissionId: string }) {
       }}
       className="flex flex-col gap-2"
     >
-      <FileDropzone name="file" accept=".pdf,.hwp,.docx" required hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다." />
+      <FileDropzone
+        name="file"
+        accept=".pdf,.hwp,.docx"
+        required
+        multiple
+        hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. 여러 개 첨부 가능합니다."
+      />
       <button
         type="submit"
         disabled={pending}
