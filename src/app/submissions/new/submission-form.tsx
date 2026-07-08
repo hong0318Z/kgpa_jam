@@ -13,11 +13,18 @@ type Volume = {
   plannedPublishDate: Date;
 };
 
-export function SubmissionForm({ volumes }: { volumes: Volume[] }) {
+export function SubmissionForm({
+  volumes,
+  pledgeAuthorNames,
+}: {
+  volumes: Volume[];
+  pledgeAuthorNames?: string;
+}) {
   const [state, formAction, pending] = useActionState(createSubmission, {});
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="pledgeAuthorNames" value={pledgeAuthorNames ?? ""} />
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">투고 호(Volume)</label>
         <select name="volumeId" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm">

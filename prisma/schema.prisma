@@ -83,11 +83,12 @@ model Volume {
 }
 
 model Submission {
-  id        String           @id @default(cuid())
-  title     String
-  abstract  String
-  keywords  String[]
-  status    SubmissionStatus @default(SUBMITTED)
+  id                 String           @id @default(cuid())
+  title              String
+  abstract           String
+  keywords           String[]
+  pledgeAuthorNames  String?
+  status             SubmissionStatus @default(SUBMITTED)
   authorId  String
   author    User             @relation("AuthorSubmissions", fields: [authorId], references: [id])
   volumeId  String

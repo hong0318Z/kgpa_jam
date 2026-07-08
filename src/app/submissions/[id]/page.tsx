@@ -66,6 +66,11 @@ export default async function SubmissionDetailPage({
               .join(", ")}
           </p>
         )}
+        {isEditor && submission.pledgeAuthorNames && (
+          <p className="mt-2 text-xs text-gray-500">
+            연구윤리서약 저자명: {submission.pledgeAuthorNames}
+          </p>
+        )}
         {(isOwner || isEditor) && (
           <div className="mt-3">
             <CoauthorEditor

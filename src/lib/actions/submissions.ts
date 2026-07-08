@@ -25,6 +25,7 @@ export async function createSubmission(
     .map((k) => k.trim())
     .filter(Boolean);
   const volumeId = String(formData.get("volumeId") ?? "");
+  const pledgeAuthorNames = String(formData.get("pledgeAuthorNames") ?? "").trim();
   const file = formData.get("file") as File | null;
   const coauthorsRaw = String(formData.get("coauthors") ?? "[]");
   let coauthors: CoauthorInput[] = [];
@@ -36,6 +37,9 @@ export async function createSubmission(
 
   if (!title || !abstract || !volumeId) {
     return { error: "제목, 초록, 투고 호(Volume)를 모두 입력해 주세요." };
+  }
+  if (!pledgeAuthorNames) {
+    return { error: "연구윤리서약서 동의 및 저자명 입력이 필요합니다." };
   }
   if (!file || file.size === 0) {
     return { error: "논문 파일을 첨부해 주세요." };
@@ -53,6 +57,7 @@ export async function createSubmission(
       abstract,
       keywords,
       volumeId,
+      pledgeAuthorNames,
       authorId: session.user.id,
     },
   });
