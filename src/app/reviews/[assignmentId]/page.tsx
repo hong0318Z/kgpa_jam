@@ -14,7 +14,13 @@ export default async function ReviewDetailPage({
   const assignment = await prisma.reviewAssignment.findUnique({
     where: { id: assignmentId },
     include: {
-      submission: { include: { volume: true, files: { orderBy: { version: "desc" }, take: 1 } } },
+      submission: {
+        include: {
+          volume: true,
+          files: { orderBy: { version: "desc" }, take: 1 },
+          authorResponses: { orderBy: { createdAt: "asc" } },
+        },
+      },
       review: true,
     },
   });
@@ -47,6 +53,20 @@ export default async function ReviewDetailPage({
           </a>
         )}
       </div>
+
+      {assignment.submission.authorResponses.length > 0 && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">저자 답변</h2>
+          <ul className="space-y-3 text-sm">
+            {assignment.submission.authorResponses.map((r) => (
+              <li key={r.id} className="border-b border-gray-100 pb-2 last:border-0">
+                <p className="text-xs text-gray-500">{r.createdAt.toLocaleString("ko-KR")}</p>
+                <p className="mt-1 whitespace-pre-wrap text-gray-800">{r.content}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 평가</h2>

@@ -15,7 +15,7 @@ export default async function DecideSubmissionPage({
     where: { id },
     include: {
       volume: true,
-      assignments: { include: { reviewer: true, review: true } },
+      assignments: { include: { reviewer: true, review: true }, orderBy: { assignedAt: "asc" } },
       decisions: { include: { editor: true }, orderBy: { decidedAt: "desc" } },
     },
   });
@@ -37,9 +37,9 @@ export default async function DecideSubmissionPage({
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 결과 종합</h2>
         <ul className="space-y-3 text-sm">
-          {submission.assignments.map((a) => (
+          {submission.assignments.map((a, i) => (
             <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
-              <p className="font-medium text-gray-900">{a.reviewer.name}</p>
+              <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
               {a.review ? (
                 <>
                   <p className="text-gray-700">

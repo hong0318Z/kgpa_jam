@@ -30,8 +30,10 @@ export default async function SubmissionDetailPage({
       statusLogs: { orderBy: { changedAt: "desc" } },
       assignments: {
         include: { review: true, reviewer: true },
+        orderBy: { assignedAt: "asc" },
       },
       coauthors: { orderBy: { order: "asc" } },
+      authorResponses: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!submission) notFound();
@@ -101,20 +103,21 @@ export default async function SubmissionDetailPage({
             </li>
           ))}
         </ul>
-        {(isOwner || isEditor) && submission.status === "REVISION_REQUESTED" && (
-          <div className="mt-4">
-            <RevisionUploadForm submissionId={submission.id} />
-          </div>
-        )}
+        {(isOwner || isEditor) &&
+          ["UNDER_REVIEW", "REVISION_REQUESTED"].includes(submission.status) && (
+            <div className="mt-4">
+              <RevisionUploadForm submissionId={submission.id} />
+            </div>
+          )}
       </div>
 
       {isEditor && (
         <div className="rounded border border-gray-200 bg-white p-6">
           <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 현황</h2>
           <ul className="space-y-3 text-sm">
-            {submission.assignments.map((a) => (
+            {submission.assignments.map((a, i) => (
               <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
-                <p className="font-medium text-gray-900">{a.reviewer.name}</p>
+                <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
                 <p className="text-xs text-gray-500">상태: {a.status}</p>
                 {a.review && (
                   <div className="mt-1 text-gray-700">
@@ -141,9 +144,11 @@ export default async function SubmissionDetailPage({
           <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 의견</h2>
           <ul className="space-y-3 text-sm">
             {submission.assignments
-              .filter((a) => a.review)
-              .map((a) => (
+              .map((a, i) => ({ a, i }))
+              .filter(({ a }) => a.review)
+              .map(({ a, i }) => (
                 <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
+                  <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
                   <p>추천의견: {a.review!.recommendation}</p>
                   <p className="mt-1 whitespace-pre-wrap text-gray-700">{a.review!.commentsToAuthor}</p>
                 </li>
@@ -151,6 +156,20 @@ export default async function SubmissionDetailPage({
             {submission.assignments.filter((a) => a.review).length === 0 && (
               <li className="text-gray-500">아직 등록된 심사 의견이 없습니다.</li>
             )}
+          </ul>
+        </div>
+      )}
+
+      {(isOwner || isEditor) && submission.authorResponses.length > 0 && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">저자 답변</h2>
+          <ul className="space-y-3 text-sm">
+            {submission.authorResponses.map((r) => (
+              <li key={r.id} className="border-b border-gray-100 pb-2 last:border-0">
+                <p className="text-xs text-gray-500">{r.createdAt.toLocaleString("ko-KR")}</p>
+                <p className="mt-1 whitespace-pre-wrap text-gray-800">{r.content}</p>
+              </li>
+            ))}
           </ul>
         </div>
       )}

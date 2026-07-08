@@ -115,7 +115,11 @@ export async function createSubmission(
   redirect(`/submissions/${submission.id}`);
 }
 
-export async function uploadRevision(submissionId: string, formData: FormData) {
+export async function uploadRevision(
+  submissionId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
   const session = await requireSession();
   const submission = await prisma.submission.findUniqueOrThrow({
     where: { id: submissionId },
@@ -127,34 +131,54 @@ export async function uploadRevision(submissionId: string, formData: FormData) {
     throw new ForbiddenError("본인의 투고만 수정할 수 있습니다.");
   }
 
+  const response = String(formData.get("response") ?? "").trim();
   const files = formData
     .getAll("file")
     .filter((f): f is File => f instanceof File && f.size > 0)
     .filter((f) => ALLOWED_EXT.includes(path.extname(f.name).toLowerCase()));
-  if (files.length === 0) return;
 
-  const latest = await prisma.submissionFile.findFirst({
-    where: { submissionId },
-    orderBy: { version: "desc" },
-  });
-  const nextVersion = (latest?.version ?? 0) + 1;
+  if (!response && files.length === 0) {
+    return { error: "답변 또는 수정 파일을 하나 이상 제출해 주세요." };
+  }
 
-  for (const file of files) {
-    const saved = await saveUploadedFile(submissionId, file);
-    await prisma.submissionFile.create({
-      data: { submissionId, version: nextVersion, ...saved },
+  if (files.length > 0) {
+    const latest = await prisma.submissionFile.findFirst({
+      where: { submissionId },
+      orderBy: { version: "desc" },
     });
+    const nextVersion = (latest?.version ?? 0) + 1;
 
+    for (const file of files) {
+      const saved = await saveUploadedFile(submissionId, file);
+      await prisma.submissionFile.create({
+        data: { submissionId, version: nextVersion, ...saved },
+      });
+
+      await logAudit({
+        actorId: session.user.id,
+        action: "FILE_UPLOADED",
+        targetType: "Submission",
+        targetId: submissionId,
+        metadata: { originalName: saved.originalName, version: nextVersion },
+      });
+    }
+  }
+
+  if (response) {
+    await prisma.authorResponse.create({
+      data: { submissionId, authorId: session.user.id, content: response },
+    });
     await logAudit({
       actorId: session.user.id,
-      action: "FILE_UPLOADED",
+      action: "AUTHOR_RESPONSE_SUBMITTED",
       targetType: "Submission",
       targetId: submissionId,
-      metadata: { originalName: saved.originalName, version: nextVersion },
     });
   }
 
   revalidatePath(`/submissions/${submissionId}`);
+  revalidatePath("/reviews");
+  return {};
 }
 
 export async function assignReviewer(submissionId: string, reviewerId: string) {

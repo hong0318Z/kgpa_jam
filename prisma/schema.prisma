@@ -67,6 +67,7 @@ model User {
   auditLogs         AuditLog[]         @relation("AuditActor")
   coauthorEntries   SubmissionAuthor[] @relation("SubmissionAuthorUser")
   policiesUpdated   Policy[]           @relation("PolicyUpdater")
+  authorResponses   AuthorResponse[]   @relation("AuthorResponseAuthor")
 }
 
 model Volume {
@@ -96,11 +97,12 @@ model Submission {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  files       SubmissionFile[]
-  assignments ReviewAssignment[]
-  decisions   Decision[]
-  statusLogs  StatusLog[]
-  coauthors   SubmissionAuthor[]
+  files           SubmissionFile[]
+  assignments     ReviewAssignment[]
+  decisions       Decision[]
+  statusLogs      StatusLog[]
+  coauthors       SubmissionAuthor[]
+  authorResponses AuthorResponse[]
 }
 
 model SubmissionFile {
@@ -197,6 +199,18 @@ model SubmissionAuthor {
   isCorresponding Boolean    @default(false)
   order           Int
   createdAt       DateTime   @default(now())
+
+  @@index([submissionId])
+}
+
+model AuthorResponse {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation("AuthorResponseAuthor", fields: [authorId], references: [id])
+  content      String
+  createdAt    DateTime   @default(now())
 
   @@index([submissionId])
 }

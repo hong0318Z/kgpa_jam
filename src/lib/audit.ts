@@ -22,7 +22,8 @@ export type AuditAction =
   | "PASSWORD_CHANGED"
   | "PASSWORD_RESET"
   | "SUBMISSION_AUTHORS_UPDATED"
-  | "POLICY_UPDATED";
+  | "POLICY_UPDATED"
+  | "AUTHOR_RESPONSE_SUBMITTED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -64,6 +65,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   PASSWORD_RESET: "비밀번호 초기화",
   SUBMISSION_AUTHORS_UPDATED: "공저자 정보 수정",
   POLICY_UPDATED: "규정 개정",
+  AUTHOR_RESPONSE_SUBMITTED: "저자 답변 제출",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
