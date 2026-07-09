@@ -8,6 +8,7 @@ import {
   resetPassword,
   bulkChangeRole,
   bulkSetActive,
+  sendWelcomeEmail,
 } from "@/lib/actions/users";
 import { formatDateTime } from "@/lib/date";
 import { GoogleIcon } from "@/components/google-signin-button";
@@ -61,6 +62,37 @@ function UserRoleCell({ user, isAdmin }: { user: UserRow; isAdmin: boolean }) {
       >
         변경
       </button>
+    </div>
+  );
+}
+
+function WelcomeEmailButton({ userId }: { userId: string }) {
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        disabled={status === "sending"}
+        onClick={() => {
+          setStatus("sending");
+          setError(null);
+          sendWelcomeEmail(userId).then((result) => {
+            if (result.error) {
+              setStatus("error");
+              setError(result.error);
+            } else {
+              setStatus("sent");
+            }
+          });
+        }}
+        className="text-xs text-gray-500 hover:underline disabled:opacity-40"
+      >
+        {status === "sending" ? "발송 중..." : "환영 메일 보내기"}
+      </button>
+      {status === "sent" && <span className="text-xs text-green-600">발송됨</span>}
+      {status === "error" && <span className="text-xs text-red-600">{error}</span>}
     </div>
   );
 }
@@ -202,16 +234,19 @@ export function UsersTable({ users, isAdmin }: { users: UserRow[]; isAdmin: bool
               </td>
               <td className="px-4 py-2 text-xs text-gray-500">{formatDateTime(u.createdAt)}</td>
               <td className="px-4 py-2">
-                {isAdmin && u.hasPassword && (
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => startTransition(() => resetPassword(u.id))}
-                    className="text-xs text-gray-500 hover:underline disabled:opacity-40"
-                  >
-                    비밀번호 초기화
-                  </button>
-                )}
+                <div className="flex flex-col gap-1">
+                  {isAdmin && u.hasPassword && (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => startTransition(() => resetPassword(u.id))}
+                      className="text-xs text-gray-500 hover:underline disabled:opacity-40"
+                    >
+                      비밀번호 초기화
+                    </button>
+                  )}
+                  {isAdmin && <WelcomeEmailButton userId={u.id} />}
+                </div>
               </td>
             </tr>
           ))}
