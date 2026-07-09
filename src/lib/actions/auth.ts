@@ -16,12 +16,16 @@ export async function registerUser(
   const name = String(formData.get("name") ?? "").trim();
   const affiliation = String(formData.get("affiliation") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const privacyConsent = formData.get("privacyConsent") === "on";
 
   if (!email || !password || !name || !affiliation || !phone) {
     return { error: "모든 항목을 입력해 주세요." };
   }
   if (password.length < 8) {
     return { error: "비밀번호는 8자 이상이어야 합니다." };
+  }
+  if (!privacyConsent) {
+    return { error: "개인정보 수집 · 이용에 동의해 주세요." };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -33,7 +37,15 @@ export async function registerUser(
   let user;
   try {
     user = await prisma.user.create({
-      data: { email, passwordHash, name, affiliation, phone, role: "AUTHOR" },
+      data: {
+        email,
+        passwordHash,
+        name,
+        affiliation,
+        phone,
+        role: "AUTHOR",
+        privacyConsentAt: new Date(),
+      },
     });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "P2002") {
