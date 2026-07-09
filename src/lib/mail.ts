@@ -17,8 +17,9 @@ function getTransport() {
     auth: { user, pass },
     // 일부 구형 호스팅 메일 서버는 최신 OpenSSL이 기본 차단하는 낮은 TLS 버전만
     // 지원한다 (SSL routines:ssl_choose_client_version:unsupported protocol).
-    // 이 SMTP 연결에 한해서만 낮은 버전을 허용한다.
-    tls: { minVersion: "TLSv1" },
+    // minVersion만으로는 부족하고, OpenSSL 3의 기본 보안 레벨(SECLEVEL=2)도
+    // 함께 낮춰야 구형 TLS 핸드셰이크가 허용된다. 이 SMTP 연결에만 적용됨.
+    tls: { minVersion: "TLSv1", ciphers: "DEFAULT@SECLEVEL=1" },
   });
 }
 
