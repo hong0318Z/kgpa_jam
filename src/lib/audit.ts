@@ -191,6 +191,15 @@ export function formatAuditMetadata(
 
   switch (action) {
     case "USER_ROLE_CHANGED": {
+      if (m.bulk) {
+        if (typeof m.to === "string") {
+          return `${m.count ?? "-"}명 역할을 ${ROLE_LABELS[m.to] ?? m.to}(으)로 일괄 변경`;
+        }
+        return `${m.count ?? "-"}명 ${m.isActive ? "활성화" : "비활성화"} 일괄 처리`;
+      }
+      if ("isActive" in m) {
+        return m.isActive ? "계정 활성화" : "계정 비활성화";
+      }
       const from = String(m.from ?? "?");
       const to = String(m.to ?? "?");
       return `${ROLE_LABELS[from] ?? from} → ${ROLE_LABELS[to] ?? to}`;

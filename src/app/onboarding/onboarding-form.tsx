@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { completeProfile } from "@/lib/actions/onboarding";
-import { PrivacyConsentNotice } from "@/components/privacy-consent-notice";
+import { PrivacyConsentBox } from "@/components/privacy-consent-box";
 
 export function OnboardingForm({ defaultName }: { defaultName: string }) {
   const [state, formAction, pending] = useActionState(completeProfile, {});
@@ -36,7 +36,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
         <label className="mb-1 block text-sm font-medium text-gray-700">
           개인정보 수집 · 이용 동의 (필수)
         </label>
-        <PrivacyConsentNotice />
+        <PrivacyConsentBox />
         <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
           <input type="checkbox" name="privacyConsent" required />
           위 개인정보 수집 · 이용에 동의합니다. (필수)

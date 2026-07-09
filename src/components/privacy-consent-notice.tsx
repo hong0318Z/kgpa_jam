@@ -1,6 +1,6 @@
-export function PrivacyConsentNotice() {
+function PrivacyConsentText() {
   return (
-    <div className="max-h-40 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">
+    <>
       <p>
         한국게임정책학회(이하 &apos;본 학회&apos;)는 「인터랙티브미디어저널」 투고 · 심사 시스템
         회원 가입 및 운영을 위해 아래와 같이 개인정보를 수집 · 이용합니다.
@@ -17,6 +17,16 @@ export function PrivacyConsentNotice() {
         귀하는 개인정보 수집 · 이용에 대한 동의를 거부할 권리가 있으며, 동의를 거부하는 경우
         회원가입 및 투고 · 심사 시스템 이용이 제한됩니다.
       </p>
+    </>
+  );
+}
+
+export function PrivacyConsentNotice() {
+  return (
+    <div className="max-h-40 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">
+      <PrivacyConsentText />
     </div>
   );
 }
+
+export { PrivacyConsentText };

@@ -3,7 +3,8 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { redirect } from "next/navigation";
+import { signIn } from "@/lib/auth";
+import { AuthError } from "next-auth";
 
 export type ActionResult = { error?: string };
 
@@ -73,5 +74,13 @@ export async function registerUser(
     metadata: { email, name, affiliation },
   });
 
-  redirect("/login?registered=1");
+  try {
+    await signIn("credentials", { email, password, redirectTo: "/" });
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return { error: "가입은 완료되었습니다. 로그인 페이지에서 다시 로그인해 주세요." };
+    }
+    throw e;
+  }
+  return {};
 }

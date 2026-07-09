@@ -40,6 +40,36 @@ export async function toggleUserActive(userId: string, isActive: boolean) {
   revalidatePath("/admin/users");
 }
 
+export async function bulkChangeRole(userIds: string[], role: Role) {
+  const session = await requireRole(["ADMIN"]);
+  if (userIds.length === 0) return;
+
+  await prisma.user.updateMany({ where: { id: { in: userIds } }, data: { role } });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "USER_ROLE_CHANGED",
+    metadata: { userIds, to: role, bulk: true, count: userIds.length },
+  });
+
+  revalidatePath("/admin/users");
+}
+
+export async function bulkSetActive(userIds: string[], isActive: boolean) {
+  const session = await requireRole(ADMIN_ROLES);
+  if (userIds.length === 0) return;
+
+  await prisma.user.updateMany({ where: { id: { in: userIds } }, data: { isActive } });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "USER_ROLE_CHANGED",
+    metadata: { isActive, bulk: true, count: userIds.length },
+  });
+
+  revalidatePath("/admin/users");
+}
+
 export async function resetPassword(userId: string) {
   const session = await requireRole(["ADMIN"]);
 
