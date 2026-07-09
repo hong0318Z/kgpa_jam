@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
@@ -13,6 +14,7 @@ declare module "next-auth" {
       name: string;
       email: string;
       mustChangePassword: boolean;
+      profileComplete: boolean;
     };
   }
 }
@@ -34,7 +36,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !user.isActive) return null;
+        if (!user || !user.isActive || !user.passwordHash) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
@@ -52,16 +54,61 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           role: user.role,
           mustChangePassword: user.mustChangePassword,
+          profileComplete: user.profileComplete,
         };
       },
     }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
   ],
   callbacks: {
+    signIn: async ({ user, account }) => {
+      if (account?.provider !== "google") return true;
+
+      const email = user.email?.toLowerCase();
+      if (!email) return false;
+
+      let dbUser = await prisma.user.findUnique({ where: { email } });
+      if (!dbUser) {
+        dbUser = await prisma.user.create({
+          data: {
+            email,
+            name: user.name ?? email,
+            role: "AUTHOR",
+            profileComplete: false,
+          },
+        });
+        await logAudit({
+          actorId: dbUser.id,
+          action: "USER_REGISTERED",
+          targetType: "User",
+          targetId: dbUser.id,
+          metadata: { email, name: dbUser.name, provider: "google" },
+        });
+      }
+      if (!dbUser.isActive) return false;
+
+      user.id = dbUser.id;
+      (user as { role?: Role }).role = dbUser.role;
+      (user as { mustChangePassword?: boolean }).mustChangePassword = dbUser.mustChangePassword;
+      (user as { profileComplete?: boolean }).profileComplete = dbUser.profileComplete;
+
+      await logAudit({
+        actorId: dbUser.id,
+        action: "LOGIN",
+        targetType: "User",
+        targetId: dbUser.id,
+      });
+      return true;
+    },
     jwt: async ({ token, user }) => {
       if (user) {
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
         token.mustChangePassword = (user as { mustChangePassword: boolean }).mustChangePassword;
+        token.profileComplete = (user as { profileComplete: boolean }).profileComplete;
       }
       return token;
     },
@@ -69,6 +116,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = token.id as string;
       session.user.role = token.role as Role;
       session.user.mustChangePassword = token.mustChangePassword as boolean;
+      session.user.profileComplete = token.profileComplete as boolean;
       return session;
     },
   },

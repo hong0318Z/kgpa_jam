@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "profileComplete" BOOLEAN NOT NULL DEFAULT true,
+ALTER COLUMN "passwordHash" DROP NOT NULL,
+ALTER COLUMN "affiliation" DROP NOT NULL,
+ALTER COLUMN "phone" DROP NOT NULL;

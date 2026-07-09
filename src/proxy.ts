@@ -13,6 +13,14 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/account/change-password", req.url));
   }
 
+  if (
+    req.auth?.user &&
+    req.auth.user.profileComplete === false &&
+    pathname !== "/onboarding"
+  ) {
+    return NextResponse.redirect(new URL("/onboarding", req.url));
+  }
+
   if (pathname.startsWith("/admin") && !(role && ADMIN_ROLES.includes(role))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }

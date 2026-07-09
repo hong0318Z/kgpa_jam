@@ -28,6 +28,9 @@ export async function changePassword(
   }
 
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
+  if (!user.passwordHash) {
+    return { error: "구글 계정으로 로그인 중이므로 비밀번호를 변경할 수 없습니다." };
+  }
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) {
     return { error: "현재 비밀번호가 일치하지 않습니다." };

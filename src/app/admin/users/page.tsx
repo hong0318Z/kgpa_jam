@@ -36,8 +36,8 @@ export default async function AdminUsersPage() {
           {users.map((u) => (
             <tr key={u.id} className="border-t border-gray-200">
               <td className="px-4 py-2 font-medium text-gray-900">{u.name}</td>
-              <td className="px-4 py-2 text-gray-600">{u.affiliation}</td>
-              <td className="px-4 py-2 text-gray-600">{u.phone}</td>
+              <td className="px-4 py-2 text-gray-600">{u.affiliation ?? "-"}</td>
+              <td className="px-4 py-2 text-gray-600">{u.phone ?? "-"}</td>
               <td className="px-4 py-2 text-gray-600">{u.email}</td>
               <td className="px-4 py-2">
                 {isAdmin ? (

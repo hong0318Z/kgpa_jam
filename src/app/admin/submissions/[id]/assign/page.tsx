@@ -35,7 +35,7 @@ export default async function AssignReviewerPage({
           {submission.assignments.map((a) => (
             <li key={a.id} className="flex items-center justify-between">
               <span>
-                {a.reviewer.name} ({a.reviewer.affiliation}) - {a.status}
+                {a.reviewer.name} ({a.reviewer.affiliation ?? "-"}) - {a.status}
               </span>
               <form
                 action={async () => {
@@ -61,7 +61,7 @@ export default async function AssignReviewerPage({
           {reviewers.map((r) => (
             <li key={r.id} className="flex items-center justify-between">
               <span>
-                {r.name} ({r.affiliation})
+                {r.name} ({r.affiliation ?? "-"})
               </span>
               <form
                 action={async () => {

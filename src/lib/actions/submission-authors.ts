@@ -11,11 +11,11 @@ export async function searchUsers(query: string) {
   if (!trimmed) return [];
 
   const users = await prisma.user.findMany({
-    where: { name: { contains: trimmed, mode: "insensitive" } },
+    where: { name: { contains: trimmed, mode: "insensitive" }, profileComplete: true },
     select: { id: true, name: true, email: true, affiliation: true },
     take: 10,
   });
-  return users;
+  return users.map((u) => ({ ...u, affiliation: u.affiliation ?? "" }));
 }
 
 export type CoauthorInput = {

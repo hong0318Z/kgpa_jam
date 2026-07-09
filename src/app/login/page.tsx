@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { login } from "@/lib/actions/login";
 import { PasswordInput } from "@/components/password-input";
+import { GoogleSignInButton } from "@/components/google-signin-button";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(login, {});
@@ -11,6 +12,12 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-sm">
       <h1 className="mb-6 text-xl font-bold text-gray-900">로그인</h1>
+      <GoogleSignInButton />
+      <div className="my-4 flex items-center gap-3 text-xs text-gray-400">
+        <div className="h-px flex-1 bg-gray-200" />
+        또는 이메일로 로그인
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
       <form action={formAction} className="flex flex-col gap-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">이메일</label>

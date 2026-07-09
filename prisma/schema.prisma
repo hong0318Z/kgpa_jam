@@ -49,13 +49,14 @@ enum ReviewStatus {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  passwordHash String?
   name         String
-  affiliation  String
-  phone        String
+  affiliation  String?
+  phone        String?
   role         Role     @default(AUTHOR)
   isActive     Boolean  @default(true)
   mustChangePassword Boolean @default(false)
+  profileComplete    Boolean   @default(true)
   privacyConsentAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
