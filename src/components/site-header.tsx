@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { ADMIN_ROLES } from "@/lib/rbac";
+import { MobileNav } from "@/components/mobile-nav";
 
 const NAV_LINKS = [
   { href: "/notices", label: "공지사항" },
@@ -24,7 +25,7 @@ export async function SiteHeader() {
               인터랙티브미디어저널 투고시스템
             </span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
+          <MobileNav>
             {NAV_LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="text-gray-700 hover:underline">
                 {l.label}
@@ -72,7 +73,7 @@ export async function SiteHeader() {
                 </Link>
               </>
             )}
-          </nav>
+          </MobileNav>
         </div>
       </div>
     </header>
