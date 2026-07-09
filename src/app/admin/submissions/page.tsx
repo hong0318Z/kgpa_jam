@@ -41,17 +41,26 @@ export default async function AdminSubmissionsPage() {
               <td className="px-4 py-2 text-gray-600">{STATUS_LABEL[s.status]}</td>
               <td className="px-4 py-2 text-gray-600">{s.assignments.length}명</td>
               <td className="px-4 py-2">
-                <Link href={`/admin/submissions/${s.id}/assign`} className="text-gray-700 hover:underline">
-                  배정
-                </Link>
-                {" · "}
-                <Link href={`/admin/submissions/${s.id}/decide`} className="text-gray-700 hover:underline">
-                  결정
-                </Link>
-                {" · "}
-                <Link href={`/submissions/${s.id}`} className="text-gray-700 hover:underline">
-                  상세
-                </Link>
+                <div className="flex flex-wrap gap-1.5">
+                  <Link
+                    href={`/admin/submissions/${s.id}/assign`}
+                    className="rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    배정
+                  </Link>
+                  <Link
+                    href={`/admin/submissions/${s.id}/decide`}
+                    className="rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    결정
+                  </Link>
+                  <Link
+                    href={`/submissions/${s.id}`}
+                    className="rounded bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-700"
+                  >
+                    상세
+                  </Link>
+                </div>
               </td>
             </tr>
           ))}

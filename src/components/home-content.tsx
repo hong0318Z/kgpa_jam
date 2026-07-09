@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { formatDate, formatDateTime } from "@/lib/date";
 
 export async function HomeContent() {
   const notices = await prisma.notice.findMany({
@@ -47,9 +48,9 @@ export async function HomeContent() {
               <li key={v.id} className="rounded border border-gray-200 bg-white p-4 text-sm">
                 <span className="font-medium text-gray-900">{v.label}</span>
                 <span className="ml-3 text-gray-500">
-                  모집기간: {v.callStartDate.toLocaleDateString("ko-KR")} ~{" "}
-                  {v.callEndDate.toLocaleDateString("ko-KR")} / 발간예정일:{" "}
-                  {v.plannedPublishDate.toLocaleDateString("ko-KR")}
+                  모집기간: {formatDate(v.callStartDate)} ~{" "}
+                  {formatDate(v.callEndDate)} / 발간예정일:{" "}
+                  {formatDate(v.plannedPublishDate)}
                 </span>
               </li>
             ))}
@@ -72,7 +73,7 @@ export async function HomeContent() {
                 {n.title}
               </Link>
               <p className="mt-1 text-xs text-gray-500">
-                {n.createdAt.toLocaleString("ko-KR")}
+                {formatDateTime(n.createdAt)}
               </p>
             </li>
           ))}

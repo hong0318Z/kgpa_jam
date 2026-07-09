@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { changeUserRole, toggleUserActive, resetPassword } from "@/lib/actions/users";
+import { formatDateTime } from "@/lib/date";
 
 const ROLE_LABELS: Record<string, string> = {
   AUTHOR: "저자",
@@ -85,7 +86,7 @@ export default async function AdminUsersPage() {
                 </form>
               </td>
               <td className="px-4 py-2 text-xs text-gray-500">
-                {u.createdAt.toLocaleString("ko-KR")}
+                {formatDateTime(u.createdAt)}
               </td>
               <td className="px-4 py-2">
                 {isAdmin && (

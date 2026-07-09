@@ -7,6 +7,7 @@ import {
   formatAuditTarget,
   type AuditAction,
 } from "@/lib/audit";
+import { formatDateTime } from "@/lib/date";
 
 export default async function AuditLogsPage() {
   await requireRole(ADMIN_ROLES);
@@ -46,7 +47,7 @@ export default async function AuditLogsPage() {
           {logs.map((log) => (
             <tr key={log.id} className="border-t border-gray-200">
               <td className="px-4 py-2 text-xs text-gray-500">
-                {log.createdAt.toLocaleString("ko-KR")}
+                {formatDateTime(log.createdAt)}
               </td>
               <td className="px-4 py-2 text-gray-700">{log.actor?.name ?? "-"}</td>
               <td className="px-4 py-2 font-medium text-gray-900">

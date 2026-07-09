@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
+import { formatDateTime } from "@/lib/date";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "투고완료",
@@ -37,7 +38,7 @@ export default async function SubmissionsPage() {
               {s.title}
             </Link>
             <p className="mt-1 text-xs text-gray-500">
-              {s.volume.label} · {STATUS_LABEL[s.status]} · {s.createdAt.toLocaleString("ko-KR")}
+              {s.volume.label} · {STATUS_LABEL[s.status]} · {formatDateTime(s.createdAt)}
             </p>
           </li>
         ))}

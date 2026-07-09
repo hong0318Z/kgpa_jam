@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { ADMIN_ROLES } from "@/lib/rbac";
 import { extractFirstImageUrl } from "@/lib/markdown";
+import { formatDateTime } from "@/lib/date";
 
 export default async function NoticesPage() {
   const session = await auth();
@@ -43,7 +44,7 @@ export default async function NoticesPage() {
                   {n.title}
                 </Link>
                 <p className="mt-1 text-xs text-gray-500">
-                  {n.author.name} · {n.createdAt.toLocaleString("ko-KR")}
+                  {n.author.name} · {formatDateTime(n.createdAt)}
                 </p>
               </div>
             </li>

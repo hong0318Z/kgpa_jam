@@ -4,6 +4,7 @@ import { deleteNotice } from "@/lib/actions/notices";
 import { notFound, redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { ADMIN_ROLES } from "@/lib/rbac";
+import { formatDateTime } from "@/lib/date";
 
 export default async function NoticeDetailPage({
   params,
@@ -22,7 +23,7 @@ export default async function NoticeDetailPage({
     <article className="rounded border border-gray-200 bg-white p-6">
       <h1 className="text-xl font-bold text-gray-900">{notice.title}</h1>
       <p className="mt-1 text-xs text-gray-500">
-        {notice.author.name} · {notice.createdAt.toLocaleString("ko-KR")}
+        {notice.author.name} · {formatDateTime(notice.createdAt)}
       </p>
       <div className="mt-4 text-sm leading-relaxed text-gray-800 [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded [&_p]:mb-3">
         <ReactMarkdown>{notice.content}</ReactMarkdown>

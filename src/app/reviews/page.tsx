@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
+import { formatDate } from "@/lib/date";
 
 export default async function ReviewsPage() {
   const session = await requireRole(["REVIEWER"]);
@@ -21,8 +22,8 @@ export default async function ReviewsPage() {
             </Link>
             <p className="mt-1 text-xs text-gray-500">
               {a.submission.volume.label} · 모집기간:{" "}
-              {a.submission.volume.callStartDate.toLocaleDateString("ko-KR")} ~{" "}
-              {a.submission.volume.callEndDate.toLocaleDateString("ko-KR")} · 상태: {a.status}
+              {formatDate(a.submission.volume.callStartDate)} ~{" "}
+              {formatDate(a.submission.volume.callEndDate)} · 상태: {a.status}
             </p>
           </li>
         ))}

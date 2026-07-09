@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { DecisionForm } from "./decision-form";
+import { formatDate, formatDateTime } from "@/lib/date";
 
 export default async function DecideSubmissionPage({
   params,
@@ -26,9 +27,9 @@ export default async function DecideSubmissionPage({
       <div className="rounded border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">
           {submission.volume.label} · 공식 모집기간:{" "}
-          {submission.volume.callStartDate.toLocaleDateString("ko-KR")} ~{" "}
-          {submission.volume.callEndDate.toLocaleDateString("ko-KR")} · 발간예정일:{" "}
-          {submission.volume.plannedPublishDate.toLocaleDateString("ko-KR")}
+          {formatDate(submission.volume.callStartDate)} ~{" "}
+          {formatDate(submission.volume.callEndDate)} · 발간예정일:{" "}
+          {formatDate(submission.volume.plannedPublishDate)}
         </p>
         <h1 className="text-xl font-bold text-gray-900">{submission.title}</h1>
         <p className="mt-1 text-sm font-medium text-gray-700">현재 상태: {submission.status}</p>
@@ -75,7 +76,7 @@ export default async function DecideSubmissionPage({
         <ul className="space-y-1 text-xs text-gray-500">
           {submission.decisions.map((d) => (
             <li key={d.id}>
-              {d.decidedAt.toLocaleString("ko-KR")} - {d.editor.name}: {d.outcome}
+              {formatDateTime(d.decidedAt)} - {d.editor.name}: {d.outcome}
               {d.note ? ` (${d.note})` : ""}
             </li>
           ))}

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { deleteResource } from "@/lib/actions/resources";
 import { ADMIN_ROLES } from "@/lib/rbac";
+import { formatDateTime } from "@/lib/date";
 
 export default async function ResourcesPage() {
   const session = await auth();
@@ -36,7 +37,7 @@ export default async function ResourcesPage() {
               </a>
               {r.description && <p className="mt-1 text-sm text-gray-600">{r.description}</p>}
               <p className="mt-1 text-xs text-gray-500">
-                {r.uploadedBy.name} · {r.createdAt.toLocaleString("ko-KR")}
+                {r.uploadedBy.name} · {formatDateTime(r.createdAt)}
               </p>
             </div>
             {session?.user && ADMIN_ROLES.includes(session.user.role) && (

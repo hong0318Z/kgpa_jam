@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { updateVolumeStatus } from "@/lib/actions/volumes";
+import { formatDate } from "@/lib/date";
 
 export default async function AdminVolumesPage() {
   await requireRole(ADMIN_ROLES);
@@ -32,11 +33,11 @@ export default async function AdminVolumesPage() {
             <tr key={v.id} className="border-t border-gray-200">
               <td className="px-4 py-2 font-medium text-gray-900">{v.label}</td>
               <td className="px-4 py-2 text-gray-600">
-                {v.callStartDate.toLocaleDateString("ko-KR")} ~{" "}
-                {v.callEndDate.toLocaleDateString("ko-KR")}
+                {formatDate(v.callStartDate)} ~{" "}
+                {formatDate(v.callEndDate)}
               </td>
               <td className="px-4 py-2 text-gray-600">
-                {v.plannedPublishDate.toLocaleDateString("ko-KR")}
+                {formatDate(v.plannedPublishDate)}
               </td>
               <td className="px-4 py-2">
                 <form

@@ -3,6 +3,7 @@ import { requireSession, ForbiddenError, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { RevisionUploadForm } from "./revision-upload-form";
 import { CoauthorEditor } from "./coauthor-editor";
+import { formatDate, formatDateTime } from "@/lib/date";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "투고완료",
@@ -50,9 +51,9 @@ export default async function SubmissionDetailPage({
       <div className="rounded border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">
           {submission.volume.label} · 모집기간:{" "}
-          {submission.volume.callStartDate.toLocaleDateString("ko-KR")} ~{" "}
-          {submission.volume.callEndDate.toLocaleDateString("ko-KR")} · 발간예정일:{" "}
-          {submission.volume.plannedPublishDate.toLocaleDateString("ko-KR")}
+          {formatDate(submission.volume.callStartDate)} ~{" "}
+          {formatDate(submission.volume.callEndDate)} · 발간예정일:{" "}
+          {formatDate(submission.volume.plannedPublishDate)}
         </p>
         <h1 className="mt-1 text-xl font-bold text-gray-900">{submission.title}</h1>
         <p className="mt-1 text-sm font-medium text-gray-700">
@@ -98,7 +99,7 @@ export default async function SubmissionDetailPage({
                 v{f.version} - {f.originalName}
               </a>{" "}
               <span className="text-xs text-gray-500">
-                ({f.uploadedAt.toLocaleString("ko-KR")})
+                ({formatDateTime(f.uploadedAt)})
               </span>
             </li>
           ))}
@@ -166,7 +167,7 @@ export default async function SubmissionDetailPage({
           <ul className="space-y-3 text-sm">
             {submission.authorResponses.map((r) => (
               <li key={r.id} className="border-b border-gray-100 pb-2 last:border-0">
-                <p className="text-xs text-gray-500">{r.createdAt.toLocaleString("ko-KR")}</p>
+                <p className="text-xs text-gray-500">{formatDateTime(r.createdAt)}</p>
                 <p className="mt-1 whitespace-pre-wrap text-gray-800">{r.content}</p>
               </li>
             ))}
@@ -179,7 +180,7 @@ export default async function SubmissionDetailPage({
         <ul className="space-y-1 text-xs text-gray-500">
           {submission.statusLogs.map((log) => (
             <li key={log.id}>
-              {log.changedAt.toLocaleString("ko-KR")} — {log.fromStatus ?? "(신규)"} →{" "}
+              {formatDateTime(log.changedAt)} — {log.fromStatus ?? "(신규)"} →{" "}
               {log.toStatus}
               {log.note ? ` (${log.note})` : ""}
             </li>

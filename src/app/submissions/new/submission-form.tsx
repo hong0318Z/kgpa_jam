@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { createSubmission } from "@/lib/actions/submissions";
 import { FileDropzone } from "@/components/file-dropzone";
 import { CoauthorPicker } from "@/components/coauthor-picker";
+import { formatDate } from "@/lib/date";
 
 type Volume = {
   id: string;
@@ -30,9 +31,9 @@ export function SubmissionForm({
         <select name="volumeId" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
           {volumes.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.label} (모집기간: {new Date(v.callStartDate).toLocaleDateString("ko-KR")} ~{" "}
-              {new Date(v.callEndDate).toLocaleDateString("ko-KR")}, 발간예정:{" "}
-              {new Date(v.plannedPublishDate).toLocaleDateString("ko-KR")})
+              {v.label} (모집기간: {formatDate(new Date(v.callStartDate))} ~{" "}
+              {formatDate(new Date(v.callEndDate))}, 발간예정:{" "}
+              {formatDate(new Date(v.plannedPublishDate))})
             </option>
           ))}
         </select>
