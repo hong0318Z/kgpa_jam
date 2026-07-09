@@ -68,6 +68,7 @@ model User {
   coauthorEntries   SubmissionAuthor[] @relation("SubmissionAuthorUser")
   policiesUpdated   Policy[]           @relation("PolicyUpdater")
   authorResponses   AuthorResponse[]   @relation("AuthorResponseAuthor")
+  siteSettingsUpdated SiteSettings[]   @relation("SiteSettingsUpdater")
 }
 
 model Volume {
@@ -226,6 +227,14 @@ model Policy {
   updatedBy     User?      @relation("PolicyUpdater", fields: [updatedById], references: [id])
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+}
+
+model SiteSettings {
+  id              String   @id @default("singleton")
+  maintenanceMode Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+  updatedById     String?
+  updatedBy       User?    @relation("SiteSettingsUpdater", fields: [updatedById], references: [id])
 }
 
 model AuditLog {

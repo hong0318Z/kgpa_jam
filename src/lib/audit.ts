@@ -23,7 +23,8 @@ export type AuditAction =
   | "PASSWORD_RESET"
   | "SUBMISSION_AUTHORS_UPDATED"
   | "POLICY_UPDATED"
-  | "AUTHOR_RESPONSE_SUBMITTED";
+  | "AUTHOR_RESPONSE_SUBMITTED"
+  | "MAINTENANCE_MODE_CHANGED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -66,6 +67,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   SUBMISSION_AUTHORS_UPDATED: "공저자 정보 수정",
   POLICY_UPDATED: "규정 개정",
   AUTHOR_RESPONSE_SUBMITTED: "저자 답변 제출",
+  MAINTENANCE_MODE_CHANGED: "사이트 운영 상태 변경",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -207,6 +209,8 @@ export function formatAuditMetadata(
       return `공저자 ${m.count ?? "-"}명으로 갱신`;
     case "POLICY_UPDATED":
       return `${m.title ?? "-"} 개정`;
+    case "MAINTENANCE_MODE_CHANGED":
+      return m.maintenanceMode ? "점검중(비공개)으로 전환" : "운영(공개)으로 전환";
     case "REVIEWER_ASSIGNED":
     case "REVIEWER_UNASSIGNED":
       return `심사위원: ${reviewerName ?? "-"}`;

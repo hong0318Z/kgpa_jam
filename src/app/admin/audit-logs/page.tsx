@@ -19,9 +19,18 @@ export default async function AuditLogsPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold text-gray-900">감사 로그 (Audit Log)</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">감사 로그 (Audit Log)</h1>
+        <a
+          href="/api/admin/audit-logs/export"
+          className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          CSV로 내보내기
+        </a>
+      </div>
       <p className="mb-4 text-sm text-gray-500">
-        회원가입, 로그인, 투고, 심사배정, 심사제출, 결정 등 모든 주요 행위가 실시간으로 기록됩니다.
+        회원가입, 로그인, 투고, 심사배정, 심사제출, 결정 등 모든 계정의 주요 행위가 실시간으로
+        기록됩니다. 최근 200건만 화면에 표시되며, 전체 기록은 CSV 내보내기로 확인할 수 있습니다.
       </p>
       <table className="w-full rounded border border-gray-200 bg-white text-sm">
         <thead className="bg-gray-50 text-left text-gray-600">

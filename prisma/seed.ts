@@ -125,6 +125,12 @@ async function main() {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: { id: "singleton", maintenanceMode: true, updatedById: admin.id },
+  });
+
   console.log("Seed complete:", {
     admin: admin.email,
     editor: editor.email,

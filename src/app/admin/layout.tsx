@@ -13,7 +13,7 @@ const ADMIN_LINKS = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireRole(ADMIN_ROLES);
+  const session = await requireRole(ADMIN_ROLES);
 
   return (
     <div className="flex flex-col gap-6">
@@ -23,6 +23,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {l.label}
           </Link>
         ))}
+        {session.user.role === "ADMIN" && (
+          <Link href="/admin/settings" className="text-gray-700 hover:underline">
+            사이트 설정
+          </Link>
+        )}
       </nav>
       {children}
     </div>

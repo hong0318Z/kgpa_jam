@@ -14,6 +14,22 @@ services:
       timeout: 5s
       retries: 10
 
+  backup:
+    build: ./backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: kgpa
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: kgpa_jam
+      MAX_BACKUPS: "10"
+    volumes:
+      - ${BACKUP_DIR:-./data/backups}:/backups
+
   app:
     build: .
     restart: unless-stopped
