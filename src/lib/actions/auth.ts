@@ -7,12 +7,20 @@ import { redirect } from "next/navigation";
 
 export type ActionResult = { error?: string };
 
+export async function checkEmailAvailability(email: string): Promise<{ available: boolean }> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return { available: false };
+  const existing = await prisma.user.findUnique({ where: { email: normalized } });
+  return { available: !existing };
+}
+
 export async function registerUser(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const affiliation = String(formData.get("affiliation") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -23,6 +31,9 @@ export async function registerUser(
   }
   if (password.length < 8) {
     return { error: "비밀번호는 8자 이상이어야 합니다." };
+  }
+  if (password !== passwordConfirm) {
+    return { error: "비밀번호가 일치하지 않습니다." };
   }
   if (!privacyConsent) {
     return { error: "개인정보 수집 · 이용에 동의해 주세요." };

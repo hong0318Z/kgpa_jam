@@ -8,12 +8,16 @@ export function PasswordInput({
   minLength,
   defaultValue,
   label,
+  value,
+  onChange,
 }: {
   name: string;
   required?: boolean;
   minLength?: number;
   defaultValue?: string;
   label?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }) {
   const [visible, setVisible] = useState(false);
   const id = useId();
@@ -33,6 +37,8 @@ export function PasswordInput({
           required={required}
           minLength={minLength}
           defaultValue={defaultValue}
+          value={value}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
           className="w-full rounded border border-gray-300 px-3 py-2 pr-16 text-sm"
         />
         <button

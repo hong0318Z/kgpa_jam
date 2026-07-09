@@ -15,12 +15,16 @@ export async function changePassword(
 
   const currentPassword = String(formData.get("currentPassword") ?? "");
   const newPassword = String(formData.get("newPassword") ?? "");
+  const newPasswordConfirm = String(formData.get("newPasswordConfirm") ?? "");
 
   if (!currentPassword || !newPassword) {
     return { error: "현재 비밀번호와 새 비밀번호를 모두 입력해 주세요." };
   }
   if (newPassword.length < 8) {
     return { error: "새 비밀번호는 8자 이상이어야 합니다." };
+  }
+  if (newPassword !== newPasswordConfirm) {
+    return { error: "새 비밀번호가 일치하지 않습니다." };
   }
 
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
