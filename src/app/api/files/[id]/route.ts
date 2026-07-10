@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { readStoredFile } from "@/lib/storage";
 import { ADMIN_ROLES } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -36,6 +37,16 @@ export async function GET(
 
   if (!isOwner && !isEditor && !isAssignedReviewer) {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  if (isEditor || isAssignedReviewer) {
+    await logAudit({
+      actorId: session.user.id,
+      action: "FILE_DOWNLOADED",
+      targetType: "Submission",
+      targetId: submission.id,
+      metadata: { originalName: file.originalName, version: file.version },
+    });
   }
 
   const buffer = await readStoredFile(file.storedPath);

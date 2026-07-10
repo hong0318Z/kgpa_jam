@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
-import { ADMIN_ROLES } from "@/lib/rbac";
+import { ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
 import { MobileNav } from "@/components/mobile-nav";
 
 const NAV_LINKS = [
@@ -38,7 +38,7 @@ export async function SiteHeader() {
                     내 투고
                   </Link>
                 )}
-                {session.user.role === "REVIEWER" && (
+                {REVIEW_ROLES.includes(session.user.role) && (
                   <Link href="/reviews" className="text-gray-700 hover:underline">
                     내 심사
                   </Link>

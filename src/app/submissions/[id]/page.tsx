@@ -4,15 +4,7 @@ import { notFound } from "next/navigation";
 import { RevisionUploadForm } from "./revision-upload-form";
 import { CoauthorEditor } from "./coauthor-editor";
 import { formatDate, formatDateTime } from "@/lib/date";
-
-const STATUS_LABEL: Record<string, string> = {
-  SUBMITTED: "투고완료",
-  UNDER_REVIEW: "심사중",
-  REVISION_REQUESTED: "수정요청",
-  ACCEPTED: "게재승인",
-  REJECTED: "반려",
-  WITHDRAWN: "철회",
-};
+import { SUBMISSION_STATUS_LABELS, REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS } from "@/lib/labels";
 
 export default async function SubmissionDetailPage({
   params,
@@ -57,7 +49,7 @@ export default async function SubmissionDetailPage({
         </p>
         <h1 className="mt-1 text-xl font-bold text-gray-900">{submission.title}</h1>
         <p className="mt-1 text-sm font-medium text-gray-700">
-          상태: {STATUS_LABEL[submission.status]}
+          상태: {SUBMISSION_STATUS_LABELS[submission.status] ?? submission.status}
         </p>
         <p className="mt-4 whitespace-pre-wrap text-sm text-gray-800">{submission.abstract}</p>
         <p className="mt-2 text-xs text-gray-500">키워드: {submission.keywords.join(", ")}</p>
@@ -119,10 +111,15 @@ export default async function SubmissionDetailPage({
             {submission.assignments.map((a, i) => (
               <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
                 <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
-                <p className="text-xs text-gray-500">상태: {a.status}</p>
+                <p className="text-xs text-gray-500">
+                  상태: {REVIEW_STATUS_LABELS[a.status] ?? a.status}
+                </p>
                 {a.review && (
                   <div className="mt-1 text-gray-700">
-                    <p>추천의견: {a.review.recommendation} (점수: {a.review.score ?? "-"})</p>
+                    <p>
+                      추천의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}{" "}
+                      (점수: {a.review.score ?? "-"})
+                    </p>
                     <p className="mt-1 whitespace-pre-wrap">{a.review.commentsToAuthor}</p>
                     {a.review.commentsToEditor && (
                       <p className="mt-1 italic text-gray-500">
@@ -150,7 +147,9 @@ export default async function SubmissionDetailPage({
               .map(({ a, i }) => (
                 <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
                   <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
-                  <p>추천의견: {a.review!.recommendation}</p>
+                  <p>
+                    추천의견: {RECOMMENDATION_LABELS[a.review!.recommendation] ?? a.review!.recommendation}
+                  </p>
                   <p className="mt-1 whitespace-pre-wrap text-gray-700">{a.review!.commentsToAuthor}</p>
                 </li>
               ))}
@@ -180,8 +179,9 @@ export default async function SubmissionDetailPage({
         <ul className="space-y-1 text-xs text-gray-500">
           {submission.statusLogs.map((log) => (
             <li key={log.id}>
-              {formatDateTime(log.changedAt)} — {log.fromStatus ?? "(신규)"} →{" "}
-              {log.toStatus}
+              {formatDateTime(log.changedAt)} —{" "}
+              {log.fromStatus ? SUBMISSION_STATUS_LABELS[log.fromStatus] ?? log.fromStatus : "(신규)"}{" "}
+              → {SUBMISSION_STATUS_LABELS[log.toStatus] ?? log.toStatus}
               {log.note ? ` (${log.note})` : ""}
             </li>
           ))}

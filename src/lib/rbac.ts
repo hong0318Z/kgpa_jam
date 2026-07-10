@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Role } from "@/generated/prisma/client";
 
 export const ADMIN_ROLES: Role[] = ["EDITOR", "CHIEF_EDITOR", "ADMIN"];
+export const REVIEW_ROLES: Role[] = ["REVIEWER", "EDITOR", "CHIEF_EDITOR"];
 
 export class ForbiddenError extends Error {
   status = 403;

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireRole, ForbiddenError } from "@/lib/rbac";
+import { requireRole, ForbiddenError, REVIEW_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { ReviewForm } from "./review-form";
 import { formatDate, formatDateTime } from "@/lib/date";
@@ -10,7 +10,7 @@ export default async function ReviewDetailPage({
   params: Promise<{ assignmentId: string }>;
 }) {
   const { assignmentId } = await params;
-  const session = await requireRole(["REVIEWER"]);
+  const session = await requireRole(REVIEW_ROLES);
 
   const assignment = await prisma.reviewAssignment.findUnique({
     where: { id: assignmentId },
@@ -42,6 +42,18 @@ export default async function ReviewDetailPage({
           {formatDate(assignment.submission.volume.plannedPublishDate)}
         </p>
         <h1 className="mt-1 text-xl font-bold text-gray-900">{assignment.submission.title}</h1>
+        {assignment.dueDate && (
+          <p
+            className={`mt-1 text-sm font-medium ${
+              assignment.status !== "SUBMITTED" && assignment.dueDate < new Date()
+                ? "text-red-600"
+                : "text-gray-700"
+            }`}
+          >
+            심사 마감일: {formatDate(assignment.dueDate)}
+            {assignment.status !== "SUBMITTED" && assignment.dueDate < new Date() && " (마감 초과)"}
+          </p>
+        )}
         <p className="mt-2 whitespace-pre-wrap text-sm text-gray-800">
           {assignment.submission.abstract}
         </p>

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { ROLE_LABELS, SUBMISSION_STATUS_LABELS, RECOMMENDATION_LABELS } from "@/lib/labels";
 
 export type AuditAction =
   | "USER_REGISTERED"
@@ -26,7 +27,9 @@ export type AuditAction =
   | "AUTHOR_RESPONSE_SUBMITTED"
   | "MAINTENANCE_MODE_CHANGED"
   | "WELCOME_EMAIL_SENT"
-  | "USER_DELETED";
+  | "USER_DELETED"
+  | "FILE_DOWNLOADED"
+  | "REVIEW_DUE_DATE_SET";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -72,6 +75,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   MAINTENANCE_MODE_CHANGED: "사이트 운영 상태 변경",
   WELCOME_EMAIL_SENT: "가입환영 메일 발송",
   USER_DELETED: "계정 삭제",
+  FILE_DOWNLOADED: "논문 파일 다운로드",
+  REVIEW_DUE_DATE_SET: "심사 마감일 설정",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -171,14 +176,6 @@ export function formatAuditTarget(
   return label ? `${typeLabel}: ${label}` : `${typeLabel} (삭제됨)`;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  AUTHOR: "저자",
-  REVIEWER: "심사위원",
-  EDITOR: "편집위원",
-  CHIEF_EDITOR: "편집위원장",
-  ADMIN: "관리자",
-};
-
 export function formatAuditMetadata(
   action: AuditAction,
   metadata: Prisma.JsonValue | null,
@@ -212,8 +209,22 @@ export function formatAuditMetadata(
       return `${m.name ?? ""} (${m.email ?? ""}, ${m.affiliation ?? ""})`;
     case "FILE_UPLOADED":
       return `${m.originalName ?? "-"}${m.version ? ` (v${m.version})` : ""}`;
-    case "DECISION_MADE":
-      return `결과: ${m.outcome ?? "-"}${m.note ? ` / 의견: ${m.note}` : ""}`;
+    case "DECISION_MADE": {
+      const outcome = typeof m.outcome === "string" ? m.outcome : "";
+      return `결과: ${SUBMISSION_STATUS_LABELS[outcome] ?? outcome ?? "-"}${
+        m.note ? ` / 의견: ${m.note}` : ""
+      }`;
+    }
+    case "REVIEW_SUBMITTED": {
+      const recommendation = typeof m.recommendation === "string" ? m.recommendation : "";
+      return `추천의견: ${RECOMMENDATION_LABELS[recommendation] ?? recommendation ?? "-"}${
+        m.score != null ? ` (점수: ${m.score})` : ""
+      }`;
+    }
+    case "FILE_DOWNLOADED":
+      return `${m.originalName ?? "-"}${m.version ? ` (v${m.version})` : ""}`;
+    case "REVIEW_DUE_DATE_SET":
+      return m.dueDate ? `마감일: ${m.dueDate}` : "마감일 해제";
     case "SUBMISSION_CREATED":
       return `제목: ${m.title ?? "-"}`;
     case "RESOURCE_UPLOADED":

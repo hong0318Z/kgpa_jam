@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { requireRole, ForbiddenError } from "@/lib/rbac";
+import { requireRole, ForbiddenError, REVIEW_ROLES } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import type { ReviewRecommendation } from "@/generated/prisma/client";
 import type { ActionResult } from "@/lib/actions/auth";
@@ -12,7 +12,7 @@ export async function submitReview(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await requireRole(["REVIEWER"]);
+  const session = await requireRole(REVIEW_ROLES);
 
   const assignment = await prisma.reviewAssignment.findUniqueOrThrow({
     where: { id: assignmentId },

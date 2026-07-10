@@ -2,15 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/date";
-
-const STATUS_LABEL: Record<string, string> = {
-  SUBMITTED: "투고완료",
-  UNDER_REVIEW: "심사중",
-  REVISION_REQUESTED: "수정요청",
-  ACCEPTED: "게재승인",
-  REJECTED: "반려",
-  WITHDRAWN: "철회",
-};
+import { SUBMISSION_STATUS_LABELS } from "@/lib/labels";
 
 export default async function SubmissionsPage() {
   const session = await requireRole(["AUTHOR", ...ADMIN_ROLES]);
@@ -38,7 +30,7 @@ export default async function SubmissionsPage() {
               {s.title}
             </Link>
             <p className="mt-1 text-xs text-gray-500">
-              {s.volume.label} · {STATUS_LABEL[s.status]} · {formatDateTime(s.createdAt)}
+              {s.volume.label} · {SUBMISSION_STATUS_LABELS[s.status] ?? s.status} · {formatDateTime(s.createdAt)}
             </p>
           </li>
         ))}

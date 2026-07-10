@@ -3,6 +3,7 @@ import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { DecisionForm } from "./decision-form";
 import { formatDate, formatDateTime } from "@/lib/date";
+import { SUBMISSION_STATUS_LABELS, RECOMMENDATION_LABELS } from "@/lib/labels";
 
 export default async function DecideSubmissionPage({
   params,
@@ -32,7 +33,9 @@ export default async function DecideSubmissionPage({
           {formatDate(submission.volume.plannedPublishDate)}
         </p>
         <h1 className="text-xl font-bold text-gray-900">{submission.title}</h1>
-        <p className="mt-1 text-sm font-medium text-gray-700">현재 상태: {submission.status}</p>
+        <p className="mt-1 text-sm font-medium text-gray-700">
+          현재 상태: {SUBMISSION_STATUS_LABELS[submission.status] ?? submission.status}
+        </p>
       </div>
 
       <div className="rounded border border-gray-200 bg-white p-6">
@@ -44,7 +47,8 @@ export default async function DecideSubmissionPage({
               {a.review ? (
                 <>
                   <p className="text-gray-700">
-                    추천의견: {a.review.recommendation} (점수: {a.review.score ?? "-"})
+                    추천의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}{" "}
+                    (점수: {a.review.score ?? "-"})
                   </p>
                   <p className="mt-1 whitespace-pre-wrap text-gray-700">
                     {a.review.commentsToAuthor}
@@ -76,7 +80,8 @@ export default async function DecideSubmissionPage({
         <ul className="space-y-1 text-xs text-gray-500">
           {submission.decisions.map((d) => (
             <li key={d.id}>
-              {formatDateTime(d.decidedAt)} - {d.editor.name}: {d.outcome}
+              {formatDateTime(d.decidedAt)} - {d.editor.name}:{" "}
+              {SUBMISSION_STATUS_LABELS[d.outcome] ?? d.outcome}
               {d.note ? ` (${d.note})` : ""}
             </li>
           ))}

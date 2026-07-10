@@ -1,15 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
-
-const STATUS_LABEL: Record<string, string> = {
-  SUBMITTED: "투고완료",
-  UNDER_REVIEW: "심사중",
-  REVISION_REQUESTED: "수정요청",
-  ACCEPTED: "게재승인",
-  REJECTED: "반려",
-  WITHDRAWN: "철회",
-};
+import { SUBMISSION_STATUS_LABELS } from "@/lib/labels";
 
 export default async function AdminSubmissionsPage() {
   await requireRole(ADMIN_ROLES);
@@ -38,7 +30,7 @@ export default async function AdminSubmissionsPage() {
               <td className="px-4 py-2 font-medium text-gray-900">{s.title}</td>
               <td className="px-4 py-2 text-gray-600">{s.author.name}</td>
               <td className="px-4 py-2 text-gray-600">{s.volume.label}</td>
-              <td className="px-4 py-2 text-gray-600">{STATUS_LABEL[s.status]}</td>
+              <td className="px-4 py-2 text-gray-600">{SUBMISSION_STATUS_LABELS[s.status] ?? s.status}</td>
               <td className="px-4 py-2 text-gray-600">{s.assignments.length}명</td>
               <td className="px-4 py-2">
                 <div className="flex flex-wrap gap-1.5">

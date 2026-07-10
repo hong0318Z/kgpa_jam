@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { submitReview } from "@/lib/actions/reviews";
 
@@ -20,6 +21,21 @@ export function ReviewForm({
   const action = submitReview.bind(null, assignmentId);
   const [state, formAction, pending] = useActionState(action, {});
 
+  const [score, setScore] = useState(initial?.score != null ? String(initial.score) : "");
+  const [recommendation, setRecommendation] = useState(initial?.recommendation ?? "");
+  const [commentsToAuthor, setCommentsToAuthor] = useState(initial?.commentsToAuthor ?? "");
+  const [commentsToEditor, setCommentsToEditor] = useState(initial?.commentsToEditor ?? "");
+
+  // 제출이 성공하면 서버에서 새로 내려온 저장값으로 동기화한다. 값이 실제로
+  // 바뀐 경우에만 실행되므로(참조가 아닌 원시값 의존), 입력 중에 임의로
+  // 초기화되지 않는다.
+  useEffect(() => {
+    setScore(initial?.score != null ? String(initial.score) : "");
+    setRecommendation(initial?.recommendation ?? "");
+    setCommentsToAuthor(initial?.commentsToAuthor ?? "");
+    setCommentsToEditor(initial?.commentsToEditor ?? "");
+  }, [initial?.score, initial?.recommendation, initial?.commentsToAuthor, initial?.commentsToEditor]);
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div>
@@ -29,7 +45,8 @@ export function ReviewForm({
           type="number"
           min={1}
           max={10}
-          defaultValue={initial?.score ?? undefined}
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
           className="w-24 rounded border border-gray-300 px-3 py-2 text-sm"
         />
       </div>
@@ -38,7 +55,8 @@ export function ReviewForm({
         <select
           name="recommendation"
           required
-          defaultValue={initial?.recommendation ?? ""}
+          value={recommendation}
+          onChange={(e) => setRecommendation(e.target.value)}
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
         >
           <option value="" disabled>
@@ -56,7 +74,8 @@ export function ReviewForm({
           name="commentsToAuthor"
           required
           rows={6}
-          defaultValue={initial?.commentsToAuthor ?? ""}
+          value={commentsToAuthor}
+          onChange={(e) => setCommentsToAuthor(e.target.value)}
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
         />
       </div>
@@ -67,7 +86,8 @@ export function ReviewForm({
         <textarea
           name="commentsToEditor"
           rows={3}
-          defaultValue={initial?.commentsToEditor ?? ""}
+          value={commentsToEditor ?? ""}
+          onChange={(e) => setCommentsToEditor(e.target.value)}
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
         />
       </div>

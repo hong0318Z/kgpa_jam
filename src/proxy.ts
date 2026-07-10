@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { ADMIN_ROLES } from "@/lib/rbac";
+import { ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -24,7 +24,7 @@ export default auth((req) => {
   if (pathname.startsWith("/admin") && !(role && ADMIN_ROLES.includes(role))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  if (pathname.startsWith("/reviews") && role !== "REVIEWER") {
+  if (pathname.startsWith("/reviews") && !(role && REVIEW_ROLES.includes(role))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
   if (pathname.startsWith("/submissions") && !req.auth?.user) {

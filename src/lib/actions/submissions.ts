@@ -181,11 +181,11 @@ export async function uploadRevision(
   return {};
 }
 
-export async function assignReviewer(submissionId: string, reviewerId: string) {
+export async function assignReviewer(submissionId: string, reviewerId: string, dueDate?: string) {
   const session = await requireRole(ADMIN_ROLES);
 
   await prisma.reviewAssignment.create({
-    data: { submissionId, reviewerId },
+    data: { submissionId, reviewerId, dueDate: dueDate ? new Date(dueDate) : undefined },
   });
 
   const submission = await prisma.submission.findUniqueOrThrow({
@@ -214,6 +214,25 @@ export async function assignReviewer(submissionId: string, reviewerId: string) {
   });
 
   revalidatePath(`/admin/submissions/${submissionId}/assign`);
+}
+
+export async function updateReviewDueDate(assignmentId: string, dueDate: string) {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const assignment = await prisma.reviewAssignment.update({
+    where: { id: assignmentId },
+    data: { dueDate: dueDate ? new Date(dueDate) : null },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "REVIEW_DUE_DATE_SET",
+    targetType: "Submission",
+    targetId: assignment.submissionId,
+    metadata: { assignmentId, dueDate: dueDate || null },
+  });
+
+  revalidatePath(`/admin/submissions/${assignment.submissionId}/assign`);
 }
 
 export async function unassignReviewer(assignmentId: string) {
