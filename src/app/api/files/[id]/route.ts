@@ -1,3 +1,4 @@
+import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { readStoredFile } from "@/lib/storage";
@@ -49,11 +50,18 @@ export async function GET(
     });
   }
 
+  // 심사위원(편집자가 아닌 순수 심사위원)에게는 저자 식별이 가능한 원본
+  // 파일명을 노출하지 않는다(익명심사). 편집진/저자 다운로드는 원본명 유지.
+  const isBlindReviewer = isAssignedReviewer && !isEditor && !isOwner;
+  const downloadName = isBlindReviewer
+    ? `논문_v${file.version}${path.extname(file.originalName)}`
+    : file.originalName;
+
   const buffer = await readStoredFile(file.storedPath);
   return new Response(buffer, {
     headers: {
       "Content-Type": file.mimeType,
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(file.originalName)}"`,
+      "Content-Disposition": `attachment; filename="${encodeURIComponent(downloadName)}"`,
     },
   });
 }

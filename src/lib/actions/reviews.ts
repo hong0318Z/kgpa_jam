@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { requireRole, ForbiddenError, REVIEW_ROLES } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { ReviewRecommendation } from "@/generated/prisma/client";
 import type { ActionResult } from "@/lib/actions/auth";
 
@@ -65,5 +66,5 @@ export async function submitReview(
 
   revalidatePath(`/reviews/${assignmentId}`);
   revalidatePath("/reviews");
-  return {};
+  redirect("/reviews");
 }
