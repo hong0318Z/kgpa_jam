@@ -17,6 +17,7 @@ services:
   backup:
     build: ./backup
     restart: unless-stopped
+    init: true
     depends_on:
       db:
         condition: service_healthy
