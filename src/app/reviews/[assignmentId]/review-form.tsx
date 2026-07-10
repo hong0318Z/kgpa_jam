@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { submitReview } from "@/lib/actions/reviews";
 
+const RECOMMENDATION_LABELS: Record<string, string> = {
+  ACCEPT: "게재가(Accept)",
+  MINOR_REVISION: "소폭수정(Minor Revision)",
+  MAJOR_REVISION: "대폭수정(Major Revision)",
+  REJECT: "게재불가(Reject)",
+};
+
 type Initial = {
   score: number | null;
   commentsToAuthor: string;
@@ -14,9 +21,11 @@ type Initial = {
 export function ReviewForm({
   assignmentId,
   initial,
+  submitted,
 }: {
   assignmentId: string;
   initial: Initial;
+  submitted: boolean;
 }) {
   const action = submitReview.bind(null, assignmentId);
   const [state, formAction, pending] = useActionState(action, {});
@@ -35,6 +44,34 @@ export function ReviewForm({
     setCommentsToAuthor(initial?.commentsToAuthor ?? "");
     setCommentsToEditor(initial?.commentsToEditor ?? "");
   }, [initial?.score, initial?.recommendation, initial?.commentsToAuthor, initial?.commentsToEditor]);
+
+  if (submitted && initial) {
+    return (
+      <div className="flex flex-col gap-3 text-sm">
+        <p className="text-gray-500">이미 제출된 심사는 더 이상 수정할 수 없습니다.</p>
+        <div>
+          <p className="font-medium text-gray-700">점수</p>
+          <p className="text-gray-900">{initial.score ?? "-"}</p>
+        </div>
+        <div>
+          <p className="font-medium text-gray-700">추천의견</p>
+          <p className="text-gray-900">
+            {RECOMMENDATION_LABELS[initial.recommendation] ?? initial.recommendation}
+          </p>
+        </div>
+        <div>
+          <p className="font-medium text-gray-700">저자에게 전달할 코멘트</p>
+          <p className="whitespace-pre-wrap text-gray-900">{initial.commentsToAuthor}</p>
+        </div>
+        {initial.commentsToEditor && (
+          <div>
+            <p className="font-medium text-gray-700">편집자 전용 코멘트</p>
+            <p className="whitespace-pre-wrap text-gray-900">{initial.commentsToEditor}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

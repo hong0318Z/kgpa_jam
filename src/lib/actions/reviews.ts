@@ -21,6 +21,9 @@ export async function submitReview(
   if (assignment.reviewerId !== session.user.id) {
     throw new ForbiddenError("배정된 심사위원만 평가를 제출할 수 있습니다.");
   }
+  if (assignment.status === "SUBMITTED") {
+    return { error: "이미 제출된 심사는 수정할 수 없습니다." };
+  }
 
   const scoreRaw = formData.get("score");
   const score = scoreRaw ? Number(scoreRaw) : null;

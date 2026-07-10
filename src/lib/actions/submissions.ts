@@ -339,3 +339,25 @@ export async function makeDecision(
   revalidatePath(`/submissions/${submissionId}`);
   revalidatePath(`/admin/submissions/${submissionId}/decide`);
 }
+
+export async function deleteSubmission(submissionId: string): Promise<{ error?: string }> {
+  const session = await requireRole(["ADMIN", "CHIEF_EDITOR"]);
+
+  const submission = await prisma.submission.findUnique({ where: { id: submissionId } });
+  if (!submission) {
+    return { error: "이미 삭제된 투고입니다." };
+  }
+
+  await prisma.submission.delete({ where: { id: submissionId } });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_DELETED",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { title: submission.title },
+  });
+
+  revalidatePath("/admin/submissions");
+  return {};
+}

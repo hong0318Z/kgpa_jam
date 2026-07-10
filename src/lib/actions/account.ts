@@ -39,6 +39,37 @@ export async function updateProfile(
   return { success: "정보가 저장되었습니다." };
 }
 
+export async function updateReviewerBankAccount(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireSession();
+
+  const bankName = String(formData.get("bankName") ?? "").trim();
+  const bankAccountNumber = String(formData.get("bankAccountNumber") ?? "").trim();
+  const bankAccountHolder = String(formData.get("bankAccountHolder") ?? "").trim();
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      reviewerBankName: bankName || null,
+      reviewerBankAccountNumber: bankAccountNumber || null,
+      reviewerBankAccountHolder: bankAccountHolder || null,
+    },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "REVIEWER_BANK_ACCOUNT_UPDATED",
+    targetType: "User",
+    targetId: session.user.id,
+    metadata: { bankName: bankName || null, bankAccountHolder: bankAccountHolder || null },
+  });
+
+  revalidatePath("/reviews");
+  return { success: "심사비 지급 계좌가 저장되었습니다." };
+}
+
 export async function changePassword(
   _prev: ActionResult,
   formData: FormData,

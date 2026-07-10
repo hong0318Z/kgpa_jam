@@ -2,9 +2,11 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { SUBMISSION_STATUS_LABELS } from "@/lib/labels";
+import { DeleteSubmissionButton } from "./delete-submission-button";
 
 export default async function AdminSubmissionsPage() {
-  await requireRole(ADMIN_ROLES);
+  const session = await requireRole(ADMIN_ROLES);
+  const canDelete = session.user.role === "ADMIN" || session.user.role === "CHIEF_EDITOR";
   const submissions = await prisma.submission.findMany({
     include: { author: true, volume: true, assignments: true },
     orderBy: { createdAt: "desc" },
@@ -52,6 +54,7 @@ export default async function AdminSubmissionsPage() {
                   >
                     상세
                   </Link>
+                  {canDelete && <DeleteSubmissionButton submissionId={s.id} title={s.title} />}
                 </div>
               </td>
             </tr>

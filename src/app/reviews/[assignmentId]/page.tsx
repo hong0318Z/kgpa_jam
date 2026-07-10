@@ -136,6 +136,7 @@ export default async function ReviewDetailPage({
         <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 평가</h2>
         <ReviewForm
           assignmentId={assignment.id}
+          submitted={assignment.status === "SUBMITTED"}
           initial={
             assignment.review
               ? {

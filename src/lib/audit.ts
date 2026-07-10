@@ -35,7 +35,9 @@ export type AuditAction =
   | "SUBMISSION_RESUBMITTED"
   | "SUBMISSION_URGENT_CHANGED"
   | "USER_PROFILE_UPDATED"
-  | "FEE_SETTINGS_UPDATED";
+  | "FEE_SETTINGS_UPDATED"
+  | "SUBMISSION_DELETED"
+  | "REVIEWER_BANK_ACCOUNT_UPDATED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -89,6 +91,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   SUBMISSION_URGENT_CHANGED: "긴급 처리 여부 변경",
   USER_PROFILE_UPDATED: "내 정보 수정",
   FEE_SETTINGS_UPDATED: "심사비/게재료 설정 변경",
+  SUBMISSION_DELETED: "투고 삭제",
+  REVIEWER_BANK_ACCOUNT_UPDATED: "심사비 지급 계좌 등록",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -248,6 +252,10 @@ export function formatAuditMetadata(
       return `소속: ${m.affiliation ?? "-"} / 직책: ${m.position ?? "-"}`;
     case "FEE_SETTINGS_UPDATED":
       return "심사비/게재료 설정이 변경되었습니다";
+    case "SUBMISSION_DELETED":
+      return `제목: ${m.title ?? "-"}`;
+    case "REVIEWER_BANK_ACCOUNT_UPDATED":
+      return `${m.bankName ?? "-"} / 예금주: ${m.bankAccountHolder ?? "-"}`;
     case "SUBMISSION_CREATED":
       return `제목: ${m.title ?? "-"}`;
     case "RESOURCE_UPLOADED":
