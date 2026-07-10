@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
+import { requireSession } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/date";
 import { SUBMISSION_STATUS_LABELS } from "@/lib/labels";
 
 export default async function SubmissionsPage() {
-  const session = await requireRole(["AUTHOR", ...ADMIN_ROLES]);
+  const session = await requireSession();
   const submissions = await prisma.submission.findMany({
     where: { authorId: session.user.id },
     include: { volume: true },

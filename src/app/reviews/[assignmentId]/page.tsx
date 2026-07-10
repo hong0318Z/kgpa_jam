@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { requireRole, ForbiddenError, REVIEW_ROLES } from "@/lib/rbac";
-import { notFound } from "next/navigation";
+import { requireRole, REVIEW_ROLES } from "@/lib/rbac";
+import { notFound, redirect } from "next/navigation";
 import { ReviewForm } from "./review-form";
 import { formatDate, formatDateTime } from "@/lib/date";
 
@@ -27,7 +27,7 @@ export default async function ReviewDetailPage({
   });
   if (!assignment) notFound();
   if (assignment.reviewerId !== session.user.id) {
-    throw new ForbiddenError("배정된 심사위원만 조회할 수 있습니다.");
+    redirect("/forbidden");
   }
 
   const latestFile = assignment.submission.files[0];

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { requireSession, ForbiddenError, ADMIN_ROLES } from "@/lib/rbac";
-import { notFound } from "next/navigation";
+import { requireSession, ADMIN_ROLES } from "@/lib/rbac";
+import { notFound, redirect } from "next/navigation";
 import { RevisionUploadForm } from "./revision-upload-form";
 import { CoauthorEditor } from "./coauthor-editor";
 import { formatDate, formatDateTime } from "@/lib/date";
@@ -31,12 +31,15 @@ export default async function SubmissionDetailPage({
   });
   if (!submission) notFound();
 
-  if (session.user.role === "AUTHOR" && submission.authorId !== session.user.id) {
-    throw new ForbiddenError("본인의 투고만 조회할 수 있습니다.");
-  }
-
   const isEditor = ADMIN_ROLES.includes(session.user.role);
   const isOwner = submission.authorId === session.user.id;
+  const isAssignedReviewer = submission.assignments.some(
+    (a) => a.reviewerId === session.user.id,
+  );
+
+  if (!isEditor && !isOwner && !isAssignedReviewer) {
+    redirect("/forbidden");
+  }
 
   return (
     <div className="flex flex-col gap-6">

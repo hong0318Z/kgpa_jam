@@ -33,11 +33,9 @@ export async function SiteHeader() {
             ))}
             {session?.user ? (
               <>
-                {session.user.role === "AUTHOR" && (
-                  <Link href="/submissions" className="text-gray-700 hover:underline">
-                    내 투고
-                  </Link>
-                )}
+                <Link href="/submissions" className="text-gray-700 hover:underline">
+                  내 투고
+                </Link>
                 {REVIEW_ROLES.includes(session.user.role) && (
                   <Link href="/reviews" className="text-gray-700 hover:underline">
                     내 심사
@@ -45,7 +43,7 @@ export async function SiteHeader() {
                 )}
                 {ADMIN_ROLES.includes(session.user.role) && (
                   <Link href="/admin/submissions" className="text-gray-700 hover:underline">
-                    관리자
+                    관리메뉴
                   </Link>
                 )}
                 <Link href="/account" className="text-gray-700 hover:underline">

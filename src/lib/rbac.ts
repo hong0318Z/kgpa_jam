@@ -22,7 +22,7 @@ export async function requireSession() {
 export async function requireRole(roles: Role[]) {
   const session = await requireSession();
   if (!roles.includes(session.user.role)) {
-    throw new ForbiddenError("권한이 없습니다.");
+    redirect("/forbidden");
   }
   return session;
 }

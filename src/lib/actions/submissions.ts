@@ -16,7 +16,7 @@ export async function createSubmission(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await requireRole(["AUTHOR", ...ADMIN_ROLES]);
+  const session = await requireSession();
 
   const title = String(formData.get("title") ?? "").trim();
   const abstract = String(formData.get("abstract") ?? "").trim();
