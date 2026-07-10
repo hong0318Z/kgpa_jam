@@ -176,27 +176,54 @@ export async function uploadRevision(
     });
   }
 
+  if (submission.status === "REVISION_REQUESTED" && files.length > 0) {
+    const nextRound = submission.round + 1;
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: { status: "UNDER_REVIEW", round: nextRound },
+    });
+    await prisma.statusLog.create({
+      data: {
+        submissionId,
+        fromStatus: "REVISION_REQUESTED",
+        toStatus: "UNDER_REVIEW",
+        note: `재투고 (${nextRound}차)`,
+      },
+    });
+    await logAudit({
+      actorId: session.user.id,
+      action: "SUBMISSION_RESUBMITTED",
+      targetType: "Submission",
+      targetId: submissionId,
+      metadata: { round: nextRound },
+    });
+  }
+
   revalidatePath(`/submissions/${submissionId}`);
   revalidatePath("/reviews");
+  revalidatePath("/");
   return {};
 }
 
 const DEFAULT_REVIEW_PERIOD_DAYS = 14;
+const URGENT_REVIEW_PERIOD_DAYS = 7;
 
 export async function assignReviewer(submissionId: string, reviewerId: string, dueDate?: string) {
   const session = await requireRole(ADMIN_ROLES);
 
-  const effectiveDueDate = dueDate
-    ? new Date(dueDate)
-    : new Date(Date.now() + DEFAULT_REVIEW_PERIOD_DAYS * 24 * 60 * 60 * 1000);
-
-  await prisma.reviewAssignment.create({
-    data: { submissionId, reviewerId, dueDate: effectiveDueDate },
-  });
-
   const submission = await prisma.submission.findUniqueOrThrow({
     where: { id: submissionId },
   });
+
+  const defaultPeriodDays = submission.isUrgent ? URGENT_REVIEW_PERIOD_DAYS : DEFAULT_REVIEW_PERIOD_DAYS;
+  const effectiveDueDate = dueDate
+    ? new Date(dueDate)
+    : new Date(Date.now() + defaultPeriodDays * 24 * 60 * 60 * 1000);
+
+  await prisma.reviewAssignment.create({
+    data: { submissionId, reviewerId, round: submission.round, dueDate: effectiveDueDate },
+  });
+
   if (submission.status === "SUBMITTED") {
     await prisma.submission.update({
       where: { id: submissionId },
@@ -217,6 +244,25 @@ export async function assignReviewer(submissionId: string, reviewerId: string, d
     targetType: "Submission",
     targetId: submissionId,
     metadata: { reviewerId },
+  });
+
+  revalidatePath(`/admin/submissions/${submissionId}/assign`);
+}
+
+export async function setSubmissionUrgent(submissionId: string, isUrgent: boolean) {
+  const session = await requireRole(ADMIN_ROLES);
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { isUrgent },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_URGENT_CHANGED",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { isUrgent },
   });
 
   revalidatePath(`/admin/submissions/${submissionId}/assign`);

@@ -5,7 +5,39 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { requireSession } from "@/lib/rbac";
 import { signOut } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
+
+export async function updateProfile(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireSession();
+
+  const affiliation = String(formData.get("affiliation") ?? "").trim();
+  const position = String(formData.get("position") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  if (!affiliation || !phone) {
+    return { error: "소속과 연락처를 입력해 주세요." };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { affiliation, position: position || null, phone },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "USER_PROFILE_UPDATED",
+    targetType: "User",
+    targetId: session.user.id,
+    metadata: { affiliation, position: position || null },
+  });
+
+  revalidatePath("/account");
+  return { success: "정보가 저장되었습니다." };
+}
 
 export async function changePassword(
   _prev: ActionResult,

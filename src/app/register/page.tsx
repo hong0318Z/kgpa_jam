@@ -50,6 +50,14 @@ export default function RegisterPage() {
           <input name="affiliation" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>
         <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">직책</label>
+          <input
+            name="position"
+            placeholder="예: 교수, 박사과정, 석사과정, 대표 등"
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">연락처</label>
           <input name="phone" required placeholder="010-0000-0000" className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>

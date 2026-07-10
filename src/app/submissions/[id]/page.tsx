@@ -41,6 +41,12 @@ export default async function SubmissionDetailPage({
     redirect("/forbidden");
   }
 
+  const roundCounts: Record<number, number> = {};
+  const numberedAssignments = submission.assignments.map((a) => {
+    roundCounts[a.round] = (roundCounts[a.round] ?? 0) + 1;
+    return { ...a, roundIndex: roundCounts[a.round] };
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded border border-gray-200 bg-white p-6">
@@ -53,6 +59,7 @@ export default async function SubmissionDetailPage({
         <h1 className="mt-1 text-xl font-bold text-gray-900">{submission.title}</h1>
         <p className="mt-1 text-sm font-medium text-gray-700">
           상태: {SUBMISSION_STATUS_LABELS[submission.status] ?? submission.status}
+          {submission.round > 1 && ` · ${submission.round}차 심사`}
         </p>
         <p className="mt-4 whitespace-pre-wrap text-sm text-gray-800">{submission.abstract}</p>
         <p className="mt-2 text-xs text-gray-500">키워드: {submission.keywords.join(", ")}</p>
@@ -111,9 +118,9 @@ export default async function SubmissionDetailPage({
         <div className="rounded border border-gray-200 bg-white p-6">
           <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 현황</h2>
           <ul className="space-y-3 text-sm">
-            {submission.assignments.map((a, i) => (
+            {numberedAssignments.map((a) => (
               <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
-                <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
+                <p className="font-medium text-gray-900">{a.round}차 심사위원 {a.roundIndex}</p>
                 <p className="text-xs text-gray-500">
                   상태: {REVIEW_STATUS_LABELS[a.status] ?? a.status}
                 </p>
@@ -144,12 +151,11 @@ export default async function SubmissionDetailPage({
         <div className="rounded border border-gray-200 bg-white p-6">
           <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 의견</h2>
           <ul className="space-y-3 text-sm">
-            {submission.assignments
-              .map((a, i) => ({ a, i }))
-              .filter(({ a }) => a.review)
-              .map(({ a, i }) => (
+            {numberedAssignments
+              .filter((a) => a.review)
+              .map((a) => (
                 <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
-                  <p className="font-medium text-gray-900">심사위원 {i + 1}</p>
+                  <p className="font-medium text-gray-900">{a.round}차 심사위원 {a.roundIndex}</p>
                   <p>
                     추천의견: {RECOMMENDATION_LABELS[a.review!.recommendation] ?? a.review!.recommendation}
                   </p>

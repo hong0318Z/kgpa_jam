@@ -31,7 +31,11 @@ export type AuditAction =
   | "FILE_DOWNLOADED"
   | "REVIEW_DUE_DATE_SET"
   | "IMPERSONATION_STARTED"
-  | "IMPERSONATION_STOPPED";
+  | "IMPERSONATION_STOPPED"
+  | "SUBMISSION_RESUBMITTED"
+  | "SUBMISSION_URGENT_CHANGED"
+  | "USER_PROFILE_UPDATED"
+  | "FEE_SETTINGS_UPDATED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -81,6 +85,10 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   REVIEW_DUE_DATE_SET: "심사 마감일 설정",
   IMPERSONATION_STARTED: "테스트 계정 전환",
   IMPERSONATION_STOPPED: "테스트 계정 전환 해제",
+  SUBMISSION_RESUBMITTED: "재투고",
+  SUBMISSION_URGENT_CHANGED: "긴급 처리 여부 변경",
+  USER_PROFILE_UPDATED: "내 정보 수정",
+  FEE_SETTINGS_UPDATED: "심사비/게재료 설정 변경",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -232,6 +240,14 @@ export function formatAuditMetadata(
     case "IMPERSONATION_STARTED":
     case "IMPERSONATION_STOPPED":
       return `${m.name ?? "-"} (${ROLE_LABELS[String(m.role)] ?? m.role ?? "-"})`;
+    case "SUBMISSION_RESUBMITTED":
+      return `${m.round ?? "-"}차 재투고`;
+    case "SUBMISSION_URGENT_CHANGED":
+      return m.isUrgent ? "긴급 처리로 설정" : "긴급 처리 해제";
+    case "USER_PROFILE_UPDATED":
+      return `소속: ${m.affiliation ?? "-"} / 직책: ${m.position ?? "-"}`;
+    case "FEE_SETTINGS_UPDATED":
+      return "심사비/게재료 설정이 변경되었습니다";
     case "SUBMISSION_CREATED":
       return `제목: ${m.title ?? "-"}`;
     case "RESOURCE_UPLOADED":

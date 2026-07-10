@@ -28,6 +28,7 @@ export type UserRow = {
   name: string;
   email: string;
   affiliation: string | null;
+  position: string | null;
   phone: string | null;
   role: Role;
   isActive: boolean;
@@ -226,6 +227,7 @@ export function UsersTable({ users, isAdmin }: { users: UserRow[]; isAdmin: bool
             )}
             <th className="px-4 py-2">이름</th>
             <th className="px-4 py-2">소속</th>
+            <th className="px-4 py-2">직책</th>
             <th className="px-4 py-2">연락처</th>
             <th className="px-4 py-2">이메일</th>
             <th className="px-4 py-2">가입방식</th>
@@ -249,6 +251,7 @@ export function UsersTable({ users, isAdmin }: { users: UserRow[]; isAdmin: bool
               )}
               <td className="px-4 py-2 font-medium text-gray-900">{u.name}</td>
               <td className="px-4 py-2 text-gray-600">{u.affiliation ?? "-"}</td>
+              <td className="px-4 py-2 text-gray-600">{u.position ?? "-"}</td>
               <td className="px-4 py-2 text-gray-600">{u.phone ?? "-"}</td>
               <td className="px-4 py-2 text-gray-600">{u.email}</td>
               <td className="px-4 py-2 text-gray-600">

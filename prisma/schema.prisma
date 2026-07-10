@@ -52,6 +52,7 @@ model User {
   passwordHash String?
   name         String
   affiliation  String?
+  position     String?
   phone        String?
   role         Role     @default(AUTHOR)
   isActive     Boolean  @default(true)
@@ -72,6 +73,7 @@ model User {
   policiesUpdated   Policy[]           @relation("PolicyUpdater")
   authorResponses   AuthorResponse[]   @relation("AuthorResponseAuthor")
   siteSettingsUpdated SiteSettings[]   @relation("SiteSettingsUpdater")
+  feeSettingsUpdated  FeeSettings[]    @relation("FeeSettingsUpdater")
 }
 
 model Volume {
@@ -94,6 +96,8 @@ model Submission {
   keywords           String[]
   pledgeAuthorNames  String?
   status             SubmissionStatus @default(SUBMITTED)
+  round              Int              @default(1)
+  isUrgent           Boolean          @default(false)
   authorId  String
   author    User             @relation("AuthorSubmissions", fields: [authorId], references: [id])
   volumeId  String
@@ -127,12 +131,13 @@ model ReviewAssignment {
   submission   Submission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   reviewerId   String
   reviewer     User         @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+  round        Int          @default(1)
   status       ReviewStatus @default(ASSIGNED)
   assignedAt   DateTime     @default(now())
   dueDate      DateTime?
   review       Review?
 
-  @@unique([submissionId, reviewerId])
+  @@unique([submissionId, reviewerId, round])
 }
 
 model Review {
@@ -238,6 +243,21 @@ model SiteSettings {
   updatedAt       DateTime @updatedAt
   updatedById     String?
   updatedBy       User?    @relation("SiteSettingsUpdater", fields: [updatedById], references: [id])
+}
+
+model FeeSettings {
+  id                           String   @id @default("singleton")
+  bankName                     String?
+  bankAccountNumber            String?
+  bankAccountHolder            String?
+  reviewPayoutPerReview        Int?
+  authorReviewFeePerSubmission Int?
+  publicationFeePerPage        Int?
+  publicationFeeFlat           Int?
+  urgentPublicationFeeExtra    Int?
+  updatedAt                    DateTime @updatedAt
+  updatedById                  String?
+  updatedBy                    User?    @relation("FeeSettingsUpdater", fields: [updatedById], references: [id])
 }
 
 model AuditLog {

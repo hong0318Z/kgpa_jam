@@ -40,6 +40,8 @@ export async function getTodoItems(user: { id: string; role: Role }): Promise<To
     });
   }
 
+  const DUE_SOON_THRESHOLD_DAYS = 5;
+
   if (REVIEW_ROLES.includes(user.role)) {
     const pendingReviews = await prisma.reviewAssignment.findMany({
       where: { reviewerId: user.id, status: { not: "SUBMITTED" } },
@@ -49,49 +51,45 @@ export async function getTodoItems(user: { id: string; role: Role }): Promise<To
     const now = new Date();
     for (const a of pendingReviews) {
       const overdue = !!a.dueDate && a.dueDate < now;
+      const dueSoon =
+        !!a.dueDate &&
+        !overdue &&
+        a.dueDate.getTime() - now.getTime() < DUE_SOON_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
       const dueText = a.dueDate
         ? overdue
           ? ` (마감 초과: ${formatDate(a.dueDate)})`
-          : ` (마감: ${formatDate(a.dueDate)})`
+          : dueSoon
+            ? ` (마감 임박: ${formatDate(a.dueDate)})`
+            : ` (마감: ${formatDate(a.dueDate)})`
         : "";
       items.push({
         label: `『${a.submission.title}』 심사를 제출해 주세요${dueText}`,
         href: `/reviews/${a.id}`,
-        urgent: overdue,
+        urgent: overdue || dueSoon,
       });
     }
   }
 
   if (ADMIN_ROLES.includes(user.role)) {
-    const unassigned = await prisma.submission.findMany({
-      where: {
-        status: "SUBMITTED",
-        assignments: { none: {} },
-      },
-      select: { id: true, title: true },
-    });
-    for (const s of unassigned) {
-      items.push({
-        label: `『${s.title}』 심사위원 배정이 필요합니다`,
-        href: `/admin/submissions/${s.id}/assign`,
-        urgent: true,
-      });
-    }
-
-    const readyForDecision = await prisma.submission.findMany({
-      where: {
-        status: "UNDER_REVIEW",
-        assignments: { some: {} },
-      },
+    const candidates = await prisma.submission.findMany({
+      where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } },
       select: {
         id: true,
         title: true,
-        assignments: { select: { status: true } },
+        round: true,
+        assignments: { select: { round: true, status: true } },
       },
     });
-    for (const s of readyForDecision) {
-      const allSubmitted = s.assignments.every((a) => a.status === "SUBMITTED");
-      if (allSubmitted) {
+
+    for (const s of candidates) {
+      const currentRoundAssignments = s.assignments.filter((a) => a.round === s.round);
+      if (currentRoundAssignments.length === 0) {
+        items.push({
+          label: `『${s.title}』 심사위원 배정이 필요합니다${s.round > 1 ? ` (${s.round}차)` : ""}`,
+          href: `/admin/submissions/${s.id}/assign`,
+          urgent: true,
+        });
+      } else if (currentRoundAssignments.every((a) => a.status === "SUBMITTED")) {
         items.push({
           label: `『${s.title}』 심사가 모두 완료되어 최종 결정이 필요합니다`,
           href: `/admin/submissions/${s.id}/decide`,

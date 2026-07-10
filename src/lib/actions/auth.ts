@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
 
-export type ActionResult = { error?: string };
+export type ActionResult = { error?: string; success?: string };
 
 export async function checkEmailAvailability(email: string): Promise<{ available: boolean }> {
   const normalized = email.trim().toLowerCase();
@@ -24,6 +24,7 @@ export async function registerUser(
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const affiliation = String(formData.get("affiliation") ?? "").trim();
+  const position = String(formData.get("position") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const privacyConsent = formData.get("privacyConsent") === "on";
 
@@ -54,6 +55,7 @@ export async function registerUser(
         passwordHash,
         name,
         affiliation,
+        position: position || null,
         phone,
         role: "AUTHOR",
         privacyConsentAt: new Date(),

@@ -13,6 +13,7 @@ export default async function ReviewsPage() {
   });
 
   const now = new Date();
+  const DUE_SOON_THRESHOLD_DAYS = 5;
 
   return (
     <div>
@@ -24,14 +25,14 @@ export default async function ReviewsPage() {
             a.dueDate &&
             !overdue &&
             a.status !== "SUBMITTED" &&
-            a.dueDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000;
+            a.dueDate.getTime() - now.getTime() < DUE_SOON_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
           return (
             <li key={a.id} className="px-4 py-3">
               <Link href={`/reviews/${a.id}`} className="font-medium text-gray-900 hover:underline">
                 {a.submission.title}
               </Link>
               <p className="mt-1 text-xs text-gray-500">
-                {a.submission.volume.label} · 모집기간:{" "}
+                {a.submission.volume.label} · {a.round}차 · 모집기간:{" "}
                 {formatDate(a.submission.volume.callStartDate)} ~{" "}
                 {formatDate(a.submission.volume.callEndDate)} · 상태:{" "}
                 {REVIEW_STATUS_LABELS[a.status] ?? a.status}
