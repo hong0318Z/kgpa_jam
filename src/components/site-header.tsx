@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
 import { MobileNav } from "@/components/mobile-nav";
+import { stopImpersonation } from "@/lib/actions/impersonation";
 
 const NAV_LINKS = [
   { href: "/notices", label: "공지사항" },
@@ -15,6 +16,19 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-gray-200 bg-white">
+      {session?.user?.impersonatedByAdminId && (
+        <div className="flex items-center justify-center gap-3 bg-amber-100 px-4 py-1.5 text-xs font-medium text-amber-900">
+          <span>
+            테스트 계정 &quot;{session.user.name}&quot;({session.user.impersonatedByAdminName}
+            님이 전환함)으로 보고 있습니다.
+          </span>
+          <form action={stopImpersonation}>
+            <button type="submit" className="underline hover:no-underline">
+              관리자로 복귀
+            </button>
+          </form>
+        </div>
+      )}
       <div className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex flex-col">

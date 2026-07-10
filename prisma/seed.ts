@@ -75,6 +75,27 @@ async function main() {
     },
   });
 
+  const testAccounts: { email: string; name: string; role: "AUTHOR" | "REVIEWER" }[] = [
+    { email: "test-author@kgpa.or.kr", name: "테스트 저자", role: "AUTHOR" },
+    { email: "test-reviewer1@kgpa.or.kr", name: "테스트 심사위원1", role: "REVIEWER" },
+    { email: "test-reviewer2@kgpa.or.kr", name: "테스트 심사위원2", role: "REVIEWER" },
+    { email: "test-reviewer3@kgpa.or.kr", name: "테스트 심사위원3", role: "REVIEWER" },
+  ];
+  for (const t of testAccounts) {
+    await prisma.user.upsert({
+      where: { email: t.email },
+      update: { isTestAccount: true },
+      create: {
+        email: t.email,
+        name: t.name,
+        affiliation: "테스트 계정",
+        role: t.role,
+        isTestAccount: true,
+        profileComplete: true,
+      },
+    });
+  }
+
   const volume = await prisma.volume.upsert({
     where: { id: "seed-volume-1" },
     update: {},

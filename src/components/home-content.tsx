@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/date";
+import { auth } from "@/lib/auth";
+import { getTodoItems } from "@/lib/todo";
 
 export async function HomeContent() {
+  const session = await auth();
   const notices = await prisma.notice.findMany({
     orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
     take: 5,
@@ -11,9 +14,30 @@ export async function HomeContent() {
     where: { status: "OPEN" },
     orderBy: { callStartDate: "desc" },
   });
+  const todoItems = session?.user ? await getTodoItems(session.user) : [];
 
   return (
     <div className="flex flex-col gap-10">
+      {session?.user && todoItems.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">해야 할 일</h2>
+          <ul className="divide-y divide-gray-200 rounded border border-gray-200 bg-white">
+            {todoItems.map((item, i) => (
+              <li key={i} className="px-4 py-3">
+                <Link
+                  href={item.href}
+                  className={`text-sm font-medium hover:underline ${
+                    item.urgent ? "text-red-600" : "text-gray-900"
+                  }`}
+                >
+                  {item.urgent ? "⚠ " : ""}
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">한국게임정책학회</p>
         <h1 className="text-2xl font-bold text-gray-900">

@@ -15,11 +15,15 @@ declare module "next-auth" {
       email: string;
       mustChangePassword: boolean;
       profileComplete: boolean;
+      impersonatedByAdminId?: string;
+      impersonatedByAdminName?: string;
     };
   }
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const STOP_IMPERSONATION_MARKER = "__STOP_IMPERSONATION__";
+
+export const { handlers, signIn, signOut, auth, unstable_update: updateSession } = NextAuth({
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
@@ -103,13 +107,53 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       });
       return true;
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, trigger, session }) => {
       if (user) {
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
         token.mustChangePassword = (user as { mustChangePassword: boolean }).mustChangePassword;
         token.profileComplete = (user as { profileComplete: boolean }).profileComplete;
       }
+
+      if (trigger === "update" && session?.user?.id) {
+        const requestedId = session.user.id as string;
+
+        if (requestedId === STOP_IMPERSONATION_MARKER) {
+          if (token.impersonatedByAdminId) {
+            const admin = await prisma.user.findUnique({
+              where: { id: token.impersonatedByAdminId as string },
+            });
+            if (admin) {
+              token.id = admin.id;
+              token.role = admin.role;
+              token.name = admin.name;
+              token.email = admin.email;
+              token.mustChangePassword = admin.mustChangePassword;
+              token.profileComplete = admin.profileComplete;
+            }
+            token.impersonatedByAdminId = undefined;
+            token.impersonatedByAdminName = undefined;
+          }
+        } else {
+          const isCurrentlyAdmin = token.role === "ADMIN";
+          const isCurrentlyImpersonating = !!token.impersonatedByAdminId;
+          const target = await prisma.user.findUnique({ where: { id: requestedId } });
+
+          if (target?.isTestAccount && (isCurrentlyAdmin || isCurrentlyImpersonating)) {
+            if (!token.impersonatedByAdminId) {
+              token.impersonatedByAdminId = token.id as string;
+              token.impersonatedByAdminName = token.name as string;
+            }
+            token.id = target.id;
+            token.role = target.role;
+            token.name = target.name;
+            token.email = target.email;
+            token.mustChangePassword = target.mustChangePassword;
+            token.profileComplete = target.profileComplete;
+          }
+        }
+      }
+
       return token;
     },
     session: async ({ session, token }) => {
@@ -117,6 +161,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.role = token.role as Role;
       session.user.mustChangePassword = token.mustChangePassword as boolean;
       session.user.profileComplete = token.profileComplete as boolean;
+      session.user.impersonatedByAdminId = token.impersonatedByAdminId as string | undefined;
+      session.user.impersonatedByAdminName = token.impersonatedByAdminName as string | undefined;
       return session;
     },
   },

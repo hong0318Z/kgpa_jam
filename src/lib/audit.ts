@@ -29,7 +29,9 @@ export type AuditAction =
   | "WELCOME_EMAIL_SENT"
   | "USER_DELETED"
   | "FILE_DOWNLOADED"
-  | "REVIEW_DUE_DATE_SET";
+  | "REVIEW_DUE_DATE_SET"
+  | "IMPERSONATION_STARTED"
+  | "IMPERSONATION_STOPPED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -77,6 +79,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   USER_DELETED: "계정 삭제",
   FILE_DOWNLOADED: "논문 파일 다운로드",
   REVIEW_DUE_DATE_SET: "심사 마감일 설정",
+  IMPERSONATION_STARTED: "테스트 계정 전환",
+  IMPERSONATION_STOPPED: "테스트 계정 전환 해제",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -225,6 +229,9 @@ export function formatAuditMetadata(
       return `${m.originalName ?? "-"}${m.version ? ` (v${m.version})` : ""}`;
     case "REVIEW_DUE_DATE_SET":
       return m.dueDate ? `마감일: ${m.dueDate}` : "마감일 해제";
+    case "IMPERSONATION_STARTED":
+    case "IMPERSONATION_STOPPED":
+      return `${m.name ?? "-"} (${ROLE_LABELS[String(m.role)] ?? m.role ?? "-"})`;
     case "SUBMISSION_CREATED":
       return `제목: ${m.title ?? "-"}`;
     case "RESOURCE_UPLOADED":
