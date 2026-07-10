@@ -24,6 +24,22 @@ export async function getTodoItems(user: { id: string; role: Role }): Promise<To
     });
   }
 
+  const myUnderReviewWithComments = await prisma.submission.findMany({
+    where: {
+      authorId: user.id,
+      status: "UNDER_REVIEW",
+      assignments: { some: { review: { isNot: null } } },
+    },
+    select: { id: true, title: true },
+  });
+  for (const s of myUnderReviewWithComments) {
+    items.push({
+      label: `『${s.title}』에 도착한 심사위원 의견을 확인해 보세요`,
+      href: `/submissions/${s.id}`,
+      urgent: false,
+    });
+  }
+
   if (REVIEW_ROLES.includes(user.role)) {
     const pendingReviews = await prisma.reviewAssignment.findMany({
       where: { reviewerId: user.id, status: { not: "SUBMITTED" } },

@@ -20,6 +20,7 @@ export default async function AssignReviewerPage({
   if (!submission) notFound();
 
   const now = new Date();
+  const defaultDueDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const assignedIds = new Set(submission.assignments.map((a) => a.reviewerId));
   const reviewers = await prisma.user.findMany({
     where: { role: { in: REVIEW_ROLES }, isActive: true, id: { notIn: [...assignedIds] } },
@@ -118,6 +119,7 @@ export default async function AssignReviewerPage({
                 <input
                   type="date"
                   name="dueDate"
+                  defaultValue={defaultDueDate}
                   className="rounded border border-gray-300 px-2 py-1 text-xs"
                 />
                 <button type="submit" className="text-xs text-gray-700 hover:underline">

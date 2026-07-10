@@ -23,6 +23,35 @@ export default async function DecideSubmissionPage({
   });
   if (!submission) notFound();
 
+  const OUTCOME_BY_RECOMMENDATION: Record<string, "ACCEPTED" | "REVISION_REQUESTED" | "REJECTED"> = {
+    ACCEPT: "ACCEPTED",
+    MINOR_REVISION: "REVISION_REQUESTED",
+    MAJOR_REVISION: "REVISION_REQUESTED",
+    REJECT: "REJECTED",
+  };
+
+  const submittedReviews = submission.assignments
+    .map((a) => a.review)
+    .filter((r): r is NonNullable<typeof r> => !!r);
+
+  const recommendationTally = new Map<string, number>();
+  const outcomeTally: Record<"ACCEPTED" | "REVISION_REQUESTED" | "REJECTED", number> = {
+    ACCEPTED: 0,
+    REVISION_REQUESTED: 0,
+    REJECTED: 0,
+  };
+  for (const r of submittedReviews) {
+    recommendationTally.set(r.recommendation, (recommendationTally.get(r.recommendation) ?? 0) + 1);
+    outcomeTally[OUTCOME_BY_RECOMMENDATION[r.recommendation]] += 1;
+  }
+  const suggestedOutcome =
+    submittedReviews.length > 0
+      ? (Object.entries(outcomeTally).sort((a, b) => b[1] - a[1])[0][0] as
+          | "ACCEPTED"
+          | "REVISION_REQUESTED"
+          | "REJECTED")
+      : null;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded border border-gray-200 bg-white p-6">
@@ -72,7 +101,23 @@ export default async function DecideSubmissionPage({
 
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">최종 결정</h2>
-        <DecisionForm submissionId={submission.id} />
+        {submittedReviews.length > 0 && (
+          <p className="mb-3 text-sm text-gray-600">
+            제출된 심사 {submittedReviews.length}건 —{" "}
+            {[...recommendationTally.entries()]
+              .map(([rec, count]) => `${RECOMMENDATION_LABELS[rec] ?? rec} ${count}`)
+              .join(" · ")}
+            {suggestedOutcome && (
+              <>
+                {" "}→ 다수의견:{" "}
+                <span className="font-semibold text-gray-900">
+                  {SUBMISSION_STATUS_LABELS[suggestedOutcome]}
+                </span>
+              </>
+            )}
+          </p>
+        )}
+        <DecisionForm submissionId={submission.id} defaultOutcome={suggestedOutcome ?? undefined} />
       </div>
 
       <div className="rounded border border-gray-200 bg-white p-6">

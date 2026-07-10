@@ -18,7 +18,7 @@ export default async function ReviewDetailPage({
       submission: {
         include: {
           volume: true,
-          files: { orderBy: { version: "desc" }, take: 1 },
+          files: { orderBy: { version: "desc" } },
           authorResponses: { orderBy: { createdAt: "asc" } },
         },
       },
@@ -30,7 +30,8 @@ export default async function ReviewDetailPage({
     redirect("/forbidden");
   }
 
-  const latestFile = assignment.submission.files[0];
+  const latestVersion = assignment.submission.files[0]?.version;
+  const latestFiles = assignment.submission.files.filter((f) => f.version === latestVersion);
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,13 +58,18 @@ export default async function ReviewDetailPage({
         <p className="mt-2 whitespace-pre-wrap text-sm text-gray-800">
           {assignment.submission.abstract}
         </p>
-        {latestFile && (
-          <a
-            href={`/api/files/${latestFile.id}`}
-            className="mt-3 inline-block text-sm text-gray-700 underline"
-          >
-            논문 파일 다운로드 (v{latestFile.version})
-          </a>
+        {latestFiles.length > 0 && (
+          <div className="mt-3 flex flex-col gap-1">
+            {latestFiles.map((f, i) => (
+              <a
+                key={f.id}
+                href={`/api/files/${f.id}`}
+                className="inline-block text-sm text-gray-700 underline"
+              >
+                논문 파일 {latestFiles.length > 1 ? `${i + 1} ` : ""}다운로드 (v{f.version})
+              </a>
+            ))}
+          </div>
         )}
       </div>
 

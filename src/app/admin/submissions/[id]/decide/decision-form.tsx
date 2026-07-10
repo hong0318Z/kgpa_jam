@@ -3,7 +3,13 @@
 import { useTransition } from "react";
 import { makeDecision } from "@/lib/actions/submissions";
 
-export function DecisionForm({ submissionId }: { submissionId: string }) {
+export function DecisionForm({
+  submissionId,
+  defaultOutcome,
+}: {
+  submissionId: string;
+  defaultOutcome?: "ACCEPTED" | "REVISION_REQUESTED" | "REJECTED";
+}) {
   const [pending, startTransition] = useTransition();
 
   return (
@@ -22,7 +28,15 @@ export function DecisionForm({ submissionId }: { submissionId: string }) {
     >
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">결정</label>
-        <select name="outcome" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+        <select
+          name="outcome"
+          required
+          defaultValue={defaultOutcome ?? ""}
+          className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="" disabled>
+            선택
+          </option>
           <option value="ACCEPTED">게재승인</option>
           <option value="REVISION_REQUESTED">수정요청</option>
           <option value="REJECTED">반려</option>

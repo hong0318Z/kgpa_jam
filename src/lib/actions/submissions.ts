@@ -181,11 +181,17 @@ export async function uploadRevision(
   return {};
 }
 
+const DEFAULT_REVIEW_PERIOD_DAYS = 14;
+
 export async function assignReviewer(submissionId: string, reviewerId: string, dueDate?: string) {
   const session = await requireRole(ADMIN_ROLES);
 
+  const effectiveDueDate = dueDate
+    ? new Date(dueDate)
+    : new Date(Date.now() + DEFAULT_REVIEW_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+
   await prisma.reviewAssignment.create({
-    data: { submissionId, reviewerId, dueDate: dueDate ? new Date(dueDate) : undefined },
+    data: { submissionId, reviewerId, dueDate: effectiveDueDate },
   });
 
   const submission = await prisma.submission.findUniqueOrThrow({
