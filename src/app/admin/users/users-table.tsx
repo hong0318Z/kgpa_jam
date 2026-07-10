@@ -8,6 +8,7 @@ import {
   resetPassword,
   bulkChangeRole,
   bulkSetActive,
+  deleteUser,
 } from "@/lib/actions/users";
 // 가입환영 메일 기능은 학회 메일서버의 TLS 호환 문제로 임시 비활성화.
 // src/lib/actions/users.ts의 sendWelcomeEmail, src/lib/mail.ts는 그대로 남겨둠.
@@ -64,6 +65,76 @@ function UserRoleCell({ user, isAdmin }: { user: UserRow; isAdmin: boolean }) {
         변경
       </button>
     </div>
+  );
+}
+
+function DeleteUserButton({ user }: { user: UserRow }) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function confirmDelete() {
+    startTransition(async () => {
+      const result = await deleteUser(user.id);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setOpen(false);
+      }
+    });
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setError(null);
+          setOpen(true);
+        }}
+        className="text-xs text-red-600 hover:underline"
+      >
+        계정 삭제
+      </button>
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-gray-900">계정을 삭제하시겠습니까?</h3>
+            <p className="mt-2 text-sm text-gray-700">
+              <span className="font-medium">{user.name}</span> ({user.email})
+            </p>
+            <p className="mt-2 text-xs text-gray-500">
+              이 작업은 되돌릴 수 없습니다. 투고 · 심사 등 활동 이력이 있는 계정은 삭제되지
+              않으며, 이 경우 &apos;비활성화&apos;를 사용해 주세요.
+            </p>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={confirmDelete}
+                className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {pending ? "삭제 중..." : "삭제 확인"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -204,16 +275,19 @@ export function UsersTable({ users, isAdmin }: { users: UserRow[]; isAdmin: bool
               </td>
               <td className="px-4 py-2 text-xs text-gray-500">{formatDateTime(u.createdAt)}</td>
               <td className="px-4 py-2">
-                {isAdmin && u.hasPassword && (
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => startTransition(() => resetPassword(u.id))}
-                    className="text-xs text-gray-500 hover:underline disabled:opacity-40"
-                  >
-                    비밀번호 초기화
-                  </button>
-                )}
+                <div className="flex flex-col gap-1">
+                  {isAdmin && u.hasPassword && (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => startTransition(() => resetPassword(u.id))}
+                      className="text-xs text-gray-500 hover:underline disabled:opacity-40"
+                    >
+                      비밀번호 초기화
+                    </button>
+                  )}
+                  {isAdmin && <DeleteUserButton user={u} />}
+                </div>
               </td>
             </tr>
           ))}

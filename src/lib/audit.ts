@@ -25,7 +25,8 @@ export type AuditAction =
   | "POLICY_UPDATED"
   | "AUTHOR_RESPONSE_SUBMITTED"
   | "MAINTENANCE_MODE_CHANGED"
-  | "WELCOME_EMAIL_SENT";
+  | "WELCOME_EMAIL_SENT"
+  | "USER_DELETED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -70,6 +71,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   AUTHOR_RESPONSE_SUBMITTED: "저자 답변 제출",
   MAINTENANCE_MODE_CHANGED: "사이트 운영 상태 변경",
   WELCOME_EMAIL_SENT: "가입환영 메일 발송",
+  USER_DELETED: "계정 삭제",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -224,6 +226,10 @@ export function formatAuditMetadata(
       return m.maintenanceMode ? "점검중(비공개)으로 전환" : "운영(공개)으로 전환";
     case "WELCOME_EMAIL_SENT":
       return `수신: ${m.email ?? "-"}`;
+    case "USER_DELETED":
+      return `${m.name ?? "-"} (${m.email ?? "-"}, ${
+        typeof m.role === "string" ? ROLE_LABELS[m.role] ?? m.role : "-"
+      })`;
     case "REVIEWER_ASSIGNED":
     case "REVIEWER_UNASSIGNED":
       return `심사위원: ${reviewerName ?? "-"}`;

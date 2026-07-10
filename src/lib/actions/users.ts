@@ -101,6 +101,42 @@ export async function sendWelcomeEmail(userId: string): Promise<{ error?: string
   return {};
 }
 
+export async function deleteUser(userId: string): Promise<{ error?: string }> {
+  const session = await requireRole(["ADMIN"]);
+
+  if (userId === session.user.id) {
+    return { error: "본인 계정은 삭제할 수 없습니다." };
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: userId } });
+  if (!target) {
+    return { error: "이미 삭제된 계정입니다." };
+  }
+
+  try {
+    await prisma.user.delete({ where: { id: userId } });
+  } catch (e) {
+    if (e instanceof Error && "code" in e && e.code === "P2003") {
+      return {
+        error:
+          "투고, 심사, 게시물 등 활동 이력이 있는 계정은 삭제할 수 없습니다. 대신 '비활성화'를 사용해 주세요.",
+      };
+    }
+    throw e;
+  }
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "USER_DELETED",
+    targetType: "User",
+    targetId: userId,
+    metadata: { name: target.name, email: target.email, role: target.role },
+  });
+
+  revalidatePath("/admin/users");
+  return {};
+}
+
 export async function resetPassword(userId: string) {
   const session = await requireRole(["ADMIN"]);
 
