@@ -1,16 +1,28 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import {
   assignReviewer,
   unassignReviewer,
   updateReviewDueDate,
   setSubmissionUrgent,
+  makeDecision,
+  uploadCopyrightAssignment,
 } from "@/lib/actions/submissions";
-import { formatDate } from "@/lib/date";
-import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS } from "@/lib/labels";
+import { formatDate, formatDateTime } from "@/lib/date";
+import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
+import { CopyrightUploadForm } from "./copyright-upload-form";
 
 const DUE_SOON_THRESHOLD_DAYS = 5;
+
+const FILE_KIND_LABELS: Record<string, string> = {
+  MAIN: "논문 본문",
+  APPENDIX: "부록",
+  SIMILARITY_REPORT: "논문유사도검사결과",
+  FINAL_MANUSCRIPT: "최종 원고",
+  COPYRIGHT_ASSIGNMENT: "저작권 위임서",
+};
 
 export default async function AssignReviewerPage({
   params,
@@ -25,6 +37,7 @@ export default async function AssignReviewerPage({
     include: {
       assignments: { include: { reviewer: true, review: true }, orderBy: { assignedAt: "asc" } },
       volume: true,
+      files: { orderBy: [{ kind: "asc" }, { version: "asc" }] },
     },
   });
   if (!submission) notFound();
@@ -37,17 +50,31 @@ export default async function AssignReviewerPage({
   const currentRoundAssignments = submission.assignments.filter((a) => a.round === submission.round);
   const pastRoundAssignments = submission.assignments.filter((a) => a.round !== submission.round);
   const assignedIds = new Set(currentRoundAssignments.map((a) => a.reviewerId));
-  const reviewers = await prisma.user.findMany({
+  const candidateReviewers = await prisma.user.findMany({
     where: { role: { in: REVIEW_ROLES }, isActive: true, id: { notIn: [...assignedIds] } },
   });
+  const reviewers = [...candidateReviewers].sort((a, b) => {
+    const aMatch = a.preferredFields.some((f) => submission.fields.includes(f)) ? 1 : 0;
+    const bMatch = b.preferredFields.some((f) => submission.fields.includes(f)) ? 1 : 0;
+    return bMatch - aMatch;
+  });
+
+  const copyrightFiles = submission.files.filter((f) => f.kind === "COPYRIGHT_ASSIGNMENT");
+  const otherFiles = submission.files.filter((f) => f.kind !== "COPYRIGHT_ASSIGNMENT");
 
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">
-          {submission.volume.label} · {submission.round}차 심사
+          심사번호 {String(submission.caseNumber).padStart(4, "0")} · {submission.volume.label} ·{" "}
+          {submission.round}차 심사
         </p>
         <h1 className="text-xl font-bold text-gray-900">{submission.title}</h1>
+        {submission.fields.length > 0 && (
+          <p className="mt-1 text-xs text-gray-500">
+            분야: {submission.fields.map((f) => SUBMISSION_FIELD_LABELS[f] ?? f).join(", ")}
+          </p>
+        )}
         <form
           action={async (formData) => {
             "use server";
@@ -63,6 +90,88 @@ export default async function AssignReviewerPage({
             저장
           </button>
         </form>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/submissions"
+            className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+          >
+            배정 완료 (목록으로)
+          </Link>
+          <details className="inline-block">
+            <summary className="cursor-pointer rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+              반려 (심사 전 반려)
+            </summary>
+            <form
+              action={async (formData) => {
+                "use server";
+                const note = String(formData.get("note") ?? "").trim();
+                await makeDecision(submission.id, "REVISION_REQUESTED", note);
+                redirect("/admin/submissions");
+              }}
+              className="mt-2 flex max-w-md flex-col gap-2 rounded border border-gray-200 bg-gray-50 p-3"
+            >
+              <label className="text-xs font-medium text-gray-700">
+                반려 사유 (저자에게 그대로 전달됩니다)
+              </label>
+              <textarea
+                name="note"
+                required
+                rows={3}
+                placeholder="예: 저작권 위임서가 누락되어 있어 수정 후 다시 제출 바랍니다."
+                className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+              />
+              <button
+                type="submit"
+                className="w-fit rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+              >
+                반려 확정 (수정요청으로 전환)
+              </button>
+            </form>
+          </details>
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-200 bg-white p-6">
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">업로드 파일 전체 내역</h2>
+        <ul className="space-y-1 text-sm">
+          {otherFiles.map((f) => (
+            <li key={f.id}>
+              <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                [{FILE_KIND_LABELS[f.kind] ?? f.kind}] v{f.version} - {f.originalName}
+              </a>{" "}
+              <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+            </li>
+          ))}
+          {otherFiles.length === 0 && <li className="text-gray-500">업로드된 파일이 없습니다.</li>}
+        </ul>
+      </div>
+
+      <div className="rounded border border-gray-200 bg-white p-6">
+        <h2 className="mb-1 text-sm font-semibold text-gray-900">저작권 위임서</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          이 항목은 관리자·편집위원장에게만 보이며 심사위원에게는 노출되지 않습니다.
+        </p>
+        <a
+          href="/templates/copyright-transfer-agreement.docx"
+          className="mb-3 inline-block text-sm text-gray-700 underline"
+        >
+          양식 다운로드 (저작권 이양 및 연구윤리 준수 동의서)
+        </a>
+        <ul className="mb-3 space-y-1 text-sm">
+          {copyrightFiles.map((f) => (
+            <li key={f.id}>
+              <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                {f.originalName}
+              </a>{" "}
+              <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+            </li>
+          ))}
+          {copyrightFiles.length === 0 && (
+            <li className="text-gray-500">아직 등록된 저작권 위임서가 없습니다.</li>
+          )}
+        </ul>
+        <CopyrightUploadForm submissionId={submission.id} />
       </div>
 
       {pastRoundAssignments.length > 0 && (
@@ -151,10 +260,17 @@ export default async function AssignReviewerPage({
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">심사위원 추가 배정</h2>
         <ul className="space-y-2 text-sm">
-          {reviewers.map((r) => (
+          {reviewers.map((r) => {
+            const fieldMatch = r.preferredFields.some((f) => submission.fields.includes(f));
+            return (
             <li key={r.id} className="flex items-center justify-between gap-2">
               <span>
                 {r.name} ({r.affiliation ?? "-"})
+                {fieldMatch && (
+                  <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
+                    선호분야 일치
+                  </span>
+                )}
               </span>
               <form
                 action={async (formData) => {
@@ -175,7 +291,8 @@ export default async function AssignReviewerPage({
                 </button>
               </form>
             </li>
-          ))}
+            );
+          })}
           {reviewers.length === 0 && (
             <li className="text-gray-500">배정 가능한 심사위원이 없습니다.</li>
           )}

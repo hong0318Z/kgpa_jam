@@ -4,6 +4,7 @@ import { requireRole, REVIEW_ROLES } from "@/lib/rbac";
 import { formatDate } from "@/lib/date";
 import { REVIEW_STATUS_LABELS } from "@/lib/labels";
 import { BankAccountForm } from "./bank-account-form";
+import { PreferredFieldsForm } from "./preferred-fields-form";
 
 export default async function ReviewsPage() {
   const session = await requireRole(REVIEW_ROLES);
@@ -22,6 +23,14 @@ export default async function ReviewsPage() {
   return (
     <div>
       <h1 className="mb-4 text-xl font-bold text-gray-900">내 심사 목록</h1>
+
+      <div className="mb-6 rounded border border-gray-200 bg-gray-50 p-4">
+        <h2 className="mb-2 text-sm font-semibold text-gray-900">선호 분야</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          선택한 분야의 투고에 배정될 때 심사위원 후보 목록 상단에 우선 표시됩니다.
+        </p>
+        <PreferredFieldsForm initialFields={user.preferredFields} />
+      </div>
 
       <div className="mb-6 rounded border border-gray-200 bg-gray-50 p-4">
         <h2 className="mb-2 text-sm font-semibold text-gray-900">심사비 지급 계좌</h2>

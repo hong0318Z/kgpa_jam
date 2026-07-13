@@ -11,6 +11,7 @@ const ADMIN_LINKS = [
   { href: "/admin/policies/research-ethics/edit", label: "연구윤리규정 수정" },
   { href: "/admin/policies/review-regulation/edit", label: "심사규정 수정" },
   { href: "/admin/fees", label: "심사비 관리" },
+  { href: "/admin/mail", label: "메일 관리" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

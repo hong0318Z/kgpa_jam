@@ -63,6 +63,7 @@ model User {
   reviewerBankName          String?
   reviewerBankAccountNumber String?
   reviewerBankAccountHolder String?
+  preferredFields           String[] @default([])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -77,6 +78,7 @@ model User {
   authorResponses   AuthorResponse[]   @relation("AuthorResponseAuthor")
   siteSettingsUpdated SiteSettings[]   @relation("SiteSettingsUpdater")
   feeSettingsUpdated  FeeSettings[]    @relation("FeeSettingsUpdater")
+  emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdater")
 }
 
 model Volume {
@@ -94,6 +96,7 @@ model Volume {
 
 model Submission {
   id                 String           @id @default(cuid())
+  caseNumber         Int              @unique @default(autoincrement())
   title              String
   abstract           String
   keywords           String[]
@@ -120,8 +123,10 @@ model Submission {
 
 enum SubmissionFileKind {
   MAIN
+  APPENDIX
   SIMILARITY_REPORT
   FINAL_MANUSCRIPT
+  COPYRIGHT_ASSIGNMENT
 }
 
 model SubmissionFile {
@@ -270,6 +275,15 @@ model FeeSettings {
   updatedAt                    DateTime @updatedAt
   updatedById                  String?
   updatedBy                    User?    @relation("FeeSettingsUpdater", fields: [updatedById], references: [id])
+}
+
+model EmailTemplate {
+  key         String   @id
+  subject     String
+  bodyHtml    String
+  updatedAt   DateTime @updatedAt
+  updatedById String?
+  updatedBy   User?    @relation("EmailTemplateUpdater", fields: [updatedById], references: [id])
 }
 
 model AuditLog {

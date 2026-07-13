@@ -134,6 +134,25 @@ export default async function SubmissionDetailPage({
           )}
       </div>
 
+      {submission.files.some((f) => f.kind === "APPENDIX") && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">부록 파일</h2>
+          <ul className="space-y-1 text-sm">
+            {submission.files
+              .filter((f) => f.kind === "APPENDIX")
+              .sort((a, b) => a.version - b.version)
+              .map((f, i) => (
+                <li key={f.id}>
+                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                    부록 ({i + 1}) - {f.originalName}
+                  </a>{" "}
+                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
       {submission.files.some((f) => f.kind === "SIMILARITY_REPORT") && (
         <div className="rounded border border-gray-200 bg-white p-6">
           <h2 className="mb-3 text-sm font-semibold text-gray-900">논문유사도검사결과</h2>

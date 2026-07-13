@@ -7,7 +7,8 @@ import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import type { Role } from "@/generated/prisma/client";
 import { sendMail } from "@/lib/mail";
-import { welcomeEmailHtml } from "@/lib/email-templates/welcome";
+import { wrapEmailShell } from "@/lib/email-templates/welcome";
+import { getEmailTemplate } from "@/lib/actions/email-templates";
 
 export async function changeUserRole(userId: string, role: Role) {
   const session = await requireRole(["ADMIN"]);
@@ -78,13 +79,13 @@ export async function sendWelcomeEmail(userId: string): Promise<{ error?: string
   const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
   try {
+    const template = await getEmailTemplate("welcome");
+    const loginUrl = `${process.env.NEXTAUTH_URL ?? ""}/login`;
+    const fill = (s: string) => s.replaceAll("{{name}}", target.name).replaceAll("{{loginUrl}}", loginUrl);
     await sendMail({
       to: target.email,
-      subject: "[한국게임정책학회] 「인터랙티브미디어저널」 회원가입을 환영합니다",
-      html: welcomeEmailHtml({
-        name: target.name,
-        loginUrl: `${process.env.NEXTAUTH_URL ?? ""}/login`,
-      }),
+      subject: fill(template.subject),
+      html: wrapEmailShell(fill(template.bodyHtml)),
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "메일 발송에 실패했습니다." };

@@ -39,6 +39,17 @@ export async function updateProfile(
   return { success: "정보가 저장되었습니다." };
 }
 
+export async function updatePreferredFields(fields: string[]) {
+  const session = await requireSession();
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { preferredFields: fields },
+  });
+
+  revalidatePath("/reviews");
+}
+
 export async function updateReviewerBankAccount(
   _prev: ActionResult,
   formData: FormData,

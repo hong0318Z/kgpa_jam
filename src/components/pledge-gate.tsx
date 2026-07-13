@@ -40,10 +40,11 @@ export function PledgeGate({ children }: { children: React.ReactNode }) {
         </label>
         <input
           value={names}
-          onChange={(e) => setNames(e.target.value)}
+          onChange={(e) => setNames(e.target.value.replace(/[0-9]/g, ""))}
           placeholder="예: 홍길동, 김공동, 이공동"
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
         />
+        <p className="mt-1 text-xs text-gray-400">숫자는 입력할 수 없습니다.</p>
       </div>
       <button
         type="button"

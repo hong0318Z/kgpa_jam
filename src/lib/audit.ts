@@ -38,7 +38,8 @@ export type AuditAction =
   | "FEE_SETTINGS_UPDATED"
   | "SUBMISSION_DELETED"
   | "REVIEWER_BANK_ACCOUNT_UPDATED"
-  | "FINAL_MANUSCRIPT_SUBMITTED";
+  | "FINAL_MANUSCRIPT_SUBMITTED"
+  | "EMAIL_TEMPLATE_UPDATED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -95,6 +96,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   SUBMISSION_DELETED: "투고 삭제",
   REVIEWER_BANK_ACCOUNT_UPDATED: "심사비 지급 계좌 등록",
   FINAL_MANUSCRIPT_SUBMITTED: "최종 원고 제출",
+  EMAIL_TEMPLATE_UPDATED: "메일 문구 수정",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -106,6 +108,7 @@ const TARGET_LABELS: Record<string, string> = {
   Notice: "공지사항",
   Resource: "자료",
   Policy: "규정",
+  EmailTemplate: "메일 문구",
 };
 
 export async function buildTargetLookup(

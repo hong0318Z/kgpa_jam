@@ -33,8 +33,14 @@ export default async function ReviewDetailPage({
     redirect("/forbidden");
   }
 
-  const latestVersion = assignment.submission.files[0]?.version;
-  const latestFiles = assignment.submission.files.filter((f) => f.version === latestVersion);
+  const caseNumber = String(assignment.submission.caseNumber).padStart(4, "0");
+  const mainFiles = assignment.submission.files.filter((f) => f.kind === "MAIN");
+  const latestMainVersion = mainFiles[0]?.version;
+  const latestMainFiles = mainFiles.filter((f) => f.version === latestMainVersion);
+  const appendixFiles = assignment.submission.files
+    .filter((f) => f.kind === "APPENDIX")
+    .sort((a, b) => a.version - b.version);
+  const similarityFiles = assignment.submission.files.filter((f) => f.kind === "SIMILARITY_REPORT");
 
   const pastAssignments = await prisma.reviewAssignment.findMany({
     where: {
@@ -79,19 +85,35 @@ export default async function ReviewDetailPage({
         <p className="mt-2 whitespace-pre-wrap text-sm text-gray-800">
           {assignment.submission.abstract}
         </p>
-        {latestFiles.length > 0 && (
-          <div className="mt-3 flex flex-col gap-1">
-            {latestFiles.map((f, i) => (
-              <a
-                key={f.id}
-                href={`/api/files/${f.id}`}
-                className="inline-block text-sm text-gray-700 underline"
-              >
-                논문 파일 {latestFiles.length > 1 ? `${i + 1} ` : ""}다운로드 (v{f.version})
-              </a>
-            ))}
-          </div>
-        )}
+        <div className="mt-3 flex flex-col gap-1">
+          {latestMainFiles.map((f, i) => (
+            <a
+              key={f.id}
+              href={`/api/files/${f.id}`}
+              className="inline-block text-sm text-gray-700 underline"
+            >
+              심사번호 {caseNumber} 논문{latestMainFiles.length > 1 ? ` (${i + 1})` : ""} 다운로드
+            </a>
+          ))}
+          {similarityFiles.map((f) => (
+            <a
+              key={f.id}
+              href={`/api/files/${f.id}`}
+              className="inline-block text-sm text-gray-700 underline"
+            >
+              심사번호 {caseNumber} 논문유사도 검사내역 다운로드
+            </a>
+          ))}
+          {appendixFiles.map((f, i) => (
+            <a
+              key={f.id}
+              href={`/api/files/${f.id}`}
+              className="inline-block text-sm text-gray-700 underline"
+            >
+              심사번호 {caseNumber} 부록 ({i + 1}) 다운로드
+            </a>
+          ))}
+        </div>
       </div>
 
       {pastAssignments.length > 0 && (

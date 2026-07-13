@@ -15,7 +15,7 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
 };
 
 export const RECOMMENDATION_LABELS: Record<string, string> = {
-  ACCEPT: "게재가",
+  ACCEPT: "게재 가능",
   MINOR_REVISION: "소폭수정",
   MAJOR_REVISION: "대폭수정",
   REJECT: "게재불가",

@@ -73,13 +73,22 @@ export function SubmissionForm({
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          논문 파일 (본문, 부록자료 등 여러 개 첨부 가능)
-        </label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">논문 파일 (본문)</label>
         <FileDropzone
           name="file"
           accept=".pdf,.hwp,.docx"
           required
+          multiple
+          hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (파일당 최대 20MB)"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          부록 파일 (선택, 표/그림/데이터 등 본문과 별도로 첨부)
+        </label>
+        <FileDropzone
+          name="appendixFile"
+          accept=".pdf,.hwp,.docx"
           multiple
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (파일당 최대 20MB)"
         />

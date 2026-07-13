@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { submitReview } from "@/lib/actions/reviews";
 
 const RECOMMENDATION_LABELS: Record<string, string> = {
-  ACCEPT: "게재가(Accept)",
+  ACCEPT: "게재 가능(Accept)",
   MINOR_REVISION: "소폭수정(Minor Revision)",
   MAJOR_REVISION: "대폭수정(Major Revision)",
   REJECT: "게재불가(Reject)",
@@ -99,7 +99,7 @@ export function ReviewForm({
           <option value="" disabled>
             선택
           </option>
-          <option value="ACCEPT">게재가(Accept)</option>
+          <option value="ACCEPT">게재 가능(Accept)</option>
           <option value="MINOR_REVISION">소폭수정(Minor Revision)</option>
           <option value="MAJOR_REVISION">대폭수정(Major Revision)</option>
           <option value="REJECT">게재불가(Reject)</option>

@@ -28,6 +28,9 @@ export async function createSubmission(
   const pledgeAuthorNames = String(formData.get("pledgeAuthorNames") ?? "").trim();
   const fields = formData.getAll("fields").map((f) => String(f)).filter(Boolean);
   const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
+  const appendixFiles = formData
+    .getAll("appendixFile")
+    .filter((f): f is File => f instanceof File && f.size > 0);
   const similarityCheckFiles = formData
     .getAll("similarityCheckFile")
     .filter((f): f is File => f instanceof File && f.size > 0);
@@ -45,10 +48,13 @@ export async function createSubmission(
   if (!pledgeAuthorNames) {
     return { error: "연구윤리서약서 동의 및 저자명 입력이 필요합니다." };
   }
+  if (/[0-9]/.test(pledgeAuthorNames)) {
+    return { error: "서약 저자명에는 숫자를 입력할 수 없습니다." };
+  }
   if (files.length === 0) {
     return { error: "논문 파일을 첨부해 주세요." };
   }
-  for (const file of files) {
+  for (const file of [...files, ...appendixFiles]) {
     if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
       return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
     }
@@ -90,6 +96,20 @@ export async function createSubmission(
         submissionId: submission.id,
         version: 1,
         kind: "SIMILARITY_REPORT",
+        ...saved,
+      },
+    });
+  }
+
+  let appendixIndex = 0;
+  for (const file of appendixFiles) {
+    appendixIndex += 1;
+    const saved = await saveUploadedFile(submission.id, file);
+    await prisma.submissionFile.create({
+      data: {
+        submissionId: submission.id,
+        version: appendixIndex,
+        kind: "APPENDIX",
         ...saved,
       },
     });
@@ -440,4 +460,44 @@ export async function submitFinalManuscript(
 
   revalidatePath(`/submissions/${submissionId}`);
   return { success: "최종 원고가 제출되었습니다." };
+}
+
+export async function uploadCopyrightAssignment(
+  submissionId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const files = formData
+    .getAll("file")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) {
+    return { error: "파일을 첨부해 주세요." };
+  }
+  for (const file of files) {
+    if (![".pdf", ".hwp", ".docx"].includes(path.extname(file.name).toLowerCase())) {
+      return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      return { error: "파일 크기는 파일당 20MB를 초과할 수 없습니다." };
+    }
+  }
+
+  for (const file of files) {
+    const saved = await saveUploadedFile(submissionId, file);
+    await prisma.submissionFile.create({
+      data: { submissionId, version: 1, kind: "COPYRIGHT_ASSIGNMENT", ...saved },
+    });
+    await logAudit({
+      actorId: session.user.id,
+      action: "FILE_UPLOADED",
+      targetType: "Submission",
+      targetId: submissionId,
+      metadata: { originalName: saved.originalName, kind: "COPYRIGHT_ASSIGNMENT" },
+    });
+  }
+
+  revalidatePath(`/admin/submissions/${submissionId}/assign`);
+  return { success: "저작권 위임서가 등록되었습니다." };
 }
