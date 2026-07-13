@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { createSubmission, resubmitSubmission } from "@/lib/actions/submissions";
 import { FileDropzone } from "@/components/file-dropzone";
 import { CoauthorPicker } from "@/components/coauthor-picker";
+import { ExistingFileList } from "@/components/existing-file-list";
 import { formatDate } from "@/lib/date";
 import { SUBMISSION_FIELDS } from "@/lib/labels";
 import type { CoauthorInput } from "@/lib/actions/submission-authors";
@@ -24,27 +25,75 @@ type InitialValues = {
   coauthors: CoauthorInput[];
 };
 
+type ExistingFile = {
+  id: string;
+  kind: string;
+  originalName: string;
+  version: number;
+  uploadedAt: Date;
+};
+
 export function SubmissionForm({
   volumes,
   pledgeAuthorNames,
   mode = "create",
   submissionId,
   initial,
+  existingFiles,
 }: {
   volumes?: Volume[];
   pledgeAuthorNames?: string;
   mode?: "create" | "resubmit";
   submissionId?: string;
   initial?: InitialValues;
+  existingFiles?: ExistingFile[];
 }) {
   const action =
     mode === "resubmit" && submissionId
       ? resubmitSubmission.bind(null, submissionId)
       : createSubmission;
   const [state, formAction, pending] = useActionState(action, {});
+  const [filesChanged, setFilesChanged] = useState(false);
+
+  const mainFiles = (existingFiles ?? []).filter((f) => f.kind === "MAIN");
+  const appendixFiles = (existingFiles ?? []).filter((f) => f.kind === "APPENDIX");
+  const similarityFiles = (existingFiles ?? []).filter((f) => f.kind === "SIMILARITY_REPORT");
+  const copyrightFiles = (existingFiles ?? []).filter((f) => f.kind === "COPYRIGHT_ASSIGNMENT");
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (mode !== "resubmit") return;
+    const fd = new FormData(e.currentTarget);
+    const title = String(fd.get("title") ?? "").trim();
+    const abstract = String(fd.get("abstract") ?? "").trim();
+    const keywords = String(fd.get("keywords") ?? "").trim();
+    const fields = fd
+      .getAll("fields")
+      .map((f) => String(f))
+      .sort()
+      .join(",");
+    const response = String(fd.get("response") ?? "").trim();
+    const hasNewFiles = ["file", "appendixFile", "similarityCheckFile", "copyrightFile"].some(
+      (name) => fd.getAll(name).some((f) => f instanceof File && f.size > 0),
+    );
+
+    const initialFields = (initial?.fields ?? []).slice().sort().join(",");
+    const changed =
+      title !== (initial?.title ?? "") ||
+      abstract !== (initial?.abstract ?? "") ||
+      keywords !== (initial?.keywords.join(", ") ?? "") ||
+      fields !== initialFields ||
+      response.length > 0 ||
+      hasNewFiles ||
+      filesChanged;
+
+    if (!changed) {
+      e.preventDefault();
+      alert("내용을 수정하세요.");
+    }
+  };
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-4">
       {mode === "create" && (
         <>
           <input type="hidden" name="pledgeAuthorNames" value={pledgeAuthorNames ?? ""} />
@@ -118,12 +167,15 @@ export function SubmissionForm({
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          논문 파일 (본문{mode === "resubmit" ? ", 수정본으로 다시 첨부해 주세요" : ""})
+          논문 파일 (본문{mode === "resubmit" ? ", 수정본을 새로 첨부해 주세요" : ""})
         </label>
+        {mode === "resubmit" && (
+          <ExistingFileList files={mainFiles} onDeleted={() => setFilesChanged(true)} />
+        )}
         <FileDropzone
           name="file"
           accept=".pdf,.hwp,.docx"
-          required
+          required={mode === "create"}
           multiple
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (파일당 최대 20MB)"
         />
@@ -132,6 +184,9 @@ export function SubmissionForm({
         <label className="mb-1 block text-sm font-medium text-gray-700">
           부록 파일 (선택, 표/그림/데이터 등 본문과 별도로 첨부)
         </label>
+        {mode === "resubmit" && (
+          <ExistingFileList files={appendixFiles} onDeleted={() => setFilesChanged(true)} />
+        )}
         <FileDropzone
           name="appendixFile"
           accept=".pdf,.hwp,.docx"
@@ -143,6 +198,9 @@ export function SubmissionForm({
         <label className="mb-1 block text-sm font-medium text-gray-700">
           논문유사도검사결과 (선택, KCI 등에서 발급받은 결과서)
         </label>
+        {mode === "resubmit" && (
+          <ExistingFileList files={similarityFiles} onDeleted={() => setFilesChanged(true)} />
+        )}
         <FileDropzone
           name="similarityCheckFile"
           accept=".pdf,.hwp,.docx"
@@ -160,12 +218,28 @@ export function SubmissionForm({
             양식 다운로드
           </a>
         </p>
+        {mode === "resubmit" && (
+          <ExistingFileList files={copyrightFiles} onDeleted={() => setFilesChanged(true)} />
+        )}
         <FileDropzone
           name="copyrightFile"
           accept=".pdf,.hwp,.docx"
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
         />
       </div>
+      {mode === "resubmit" && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            심사위원께 드리는 답변 (수정 사항 요약)
+          </label>
+          <textarea
+            name="response"
+            rows={5}
+            placeholder="심사 의견에 대한 수정 사항을 요약해 주세요."
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+      )}
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button
         type="submit"

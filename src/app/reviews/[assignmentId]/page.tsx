@@ -34,23 +34,55 @@ export default async function ReviewDetailPage({
   }
 
   const caseNumber = String(assignment.submission.caseNumber).padStart(4, "0");
-  const mainFiles = assignment.submission.files.filter((f) => f.kind === "MAIN");
-  const latestMainVersion = mainFiles[0]?.version;
-  const latestMainFiles = mainFiles.filter((f) => f.version === latestMainVersion);
-  const appendixFiles = assignment.submission.files
+  const currentRoundFiles = assignment.submission.files.filter((f) => f.round === assignment.round);
+  const latestMainFiles = currentRoundFiles
+    .filter((f) => f.kind === "MAIN")
+    .sort((a, b) => a.version - b.version);
+  const appendixFiles = currentRoundFiles
     .filter((f) => f.kind === "APPENDIX")
     .sort((a, b) => a.version - b.version);
-  const similarityFiles = assignment.submission.files.filter((f) => f.kind === "SIMILARITY_REPORT");
+  const similarityFiles = currentRoundFiles.filter((f) => f.kind === "SIMILARITY_REPORT");
 
-  const pastAssignments = await prisma.reviewAssignment.findMany({
+  const pastRounds = Array.from(
+    new Set(
+      assignment.submission.files
+        .filter((f) => f.round < assignment.round)
+        .map((f) => f.round),
+    ),
+  ).sort((a, b) => a - b);
+
+  const pastRoundFiles = new Map(
+    pastRounds.map((round) => [
+      round,
+      {
+        main: assignment.submission.files
+          .filter((f) => f.round === round && f.kind === "MAIN")
+          .sort((a, b) => a.version - b.version),
+        appendix: assignment.submission.files
+          .filter((f) => f.round === round && f.kind === "APPENDIX")
+          .sort((a, b) => a.version - b.version),
+        similarity: assignment.submission.files.filter(
+          (f) => f.round === round && f.kind === "SIMILARITY_REPORT",
+        ),
+      },
+    ]),
+  );
+
+  const allRoundCounts: Record<number, number> = {};
+  const allAssignments = await prisma.reviewAssignment.findMany({
     where: {
       submissionId: assignment.submissionId,
-      reviewerId: session.user.id,
+      round: { lte: assignment.round },
       id: { not: assignment.id },
     },
     include: { review: true },
-    orderBy: { round: "asc" },
+    orderBy: [{ round: "asc" }, { assignedAt: "asc" }],
   });
+  const numberedAllAssignments = allAssignments.map((a) => {
+    allRoundCounts[a.round] = (allRoundCounts[a.round] ?? 0) + 1;
+    return { ...a, roundIndex: allRoundCounts[a.round] };
+  });
+  const pastAssignments = numberedAllAssignments.filter((a) => a.round < assignment.round);
 
   const now = new Date();
   const overdue = !!assignment.dueDate && assignment.status !== "SUBMITTED" && assignment.dueDate < now;
@@ -85,7 +117,8 @@ export default async function ReviewDetailPage({
         <p className="mt-2 whitespace-pre-wrap text-sm text-gray-800">
           {assignment.submission.abstract}
         </p>
-        <div className="mt-3 flex flex-col gap-1">
+        <p className="mt-3 text-xs font-medium text-gray-500">{assignment.round}차심사 파일</p>
+        <div className="mt-1 flex flex-col gap-1">
           {latestMainFiles.map((f, i) => (
             <a
               key={f.id}
@@ -113,30 +146,79 @@ export default async function ReviewDetailPage({
               심사번호 {caseNumber} 부록 ({i + 1}) 다운로드
             </a>
           ))}
+          {latestMainFiles.length === 0 && similarityFiles.length === 0 && appendixFiles.length === 0 && (
+            <p className="text-sm text-gray-500">이번 회차에 새로 등록된 파일이 없습니다.</p>
+          )}
         </div>
       </div>
 
-      {pastAssignments.length > 0 && (
-        <div className="rounded border border-gray-200 bg-gray-50 p-6">
-          <h2 className="mb-3 text-sm font-semibold text-gray-900">이전 심사 내역</h2>
-          <ul className="space-y-3 text-sm">
-            {pastAssignments.map((a) => (
-              <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
-                <p className="font-medium text-gray-900">{a.round}차</p>
-                {a.review ? (
-                  <>
-                    <p className="text-gray-700">
-                      심사의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}
-                      {a.review.score != null && ` (점수: ${a.review.score})`}
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap text-gray-700">{a.review.commentsToAuthor}</p>
-                  </>
-                ) : (
-                  <p className="text-gray-500">심사를 제출하지 않았습니다.</p>
+      {pastRounds.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {pastRounds.map((round) => {
+            const files = pastRoundFiles.get(round)!;
+            const reviewsForRound = pastAssignments.filter((a) => a.round === round);
+            return (
+              <details key={round} className="rounded border border-gray-200 bg-gray-50 p-6">
+                <summary className="cursor-pointer text-sm font-semibold text-gray-900">
+                  {round}차심사 내역 (열어서 보기)
+                </summary>
+                <div className="mt-3 flex flex-col gap-1">
+                  {files.main.map((f, i) => (
+                    <a
+                      key={f.id}
+                      href={`/api/files/${f.id}`}
+                      className="inline-block text-sm text-gray-700 underline"
+                    >
+                      심사번호 {caseNumber} 논문{files.main.length > 1 ? ` (${i + 1})` : ""} ({round}차심사) 다운로드
+                    </a>
+                  ))}
+                  {files.similarity.map((f) => (
+                    <a
+                      key={f.id}
+                      href={`/api/files/${f.id}`}
+                      className="inline-block text-sm text-gray-700 underline"
+                    >
+                      심사번호 {caseNumber} 논문유사도 검사내역 ({round}차심사) 다운로드
+                    </a>
+                  ))}
+                  {files.appendix.map((f, i) => (
+                    <a
+                      key={f.id}
+                      href={`/api/files/${f.id}`}
+                      className="inline-block text-sm text-gray-700 underline"
+                    >
+                      심사번호 {caseNumber} 부록 ({i + 1}) ({round}차심사) 다운로드
+                    </a>
+                  ))}
+                </div>
+                {reviewsForRound.length > 0 && (
+                  <ul className="mt-3 space-y-3 border-t border-gray-200 pt-3 text-sm">
+                    {reviewsForRound.map((a) => (
+                      <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
+                        <p className="font-medium text-gray-900">
+                          {a.round}차 심사위원 {a.roundIndex}
+                        </p>
+                        {a.review ? (
+                          <>
+                            <p className="text-gray-700">
+                              심사의견:{" "}
+                              {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}
+                              {a.review.score != null && ` (점수: ${a.review.score})`}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap text-gray-700">
+                              {a.review.commentsToAuthor}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-gray-500">심사를 제출하지 않았습니다.</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </li>
-            ))}
-          </ul>
+              </details>
+            );
+          })}
         </div>
       )}
 

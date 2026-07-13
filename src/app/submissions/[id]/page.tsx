@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { requireSession, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { RevisionUploadForm } from "./revision-upload-form";
 import { CoauthorEditor } from "./coauthor-editor";
 import { ReviewResultsModal } from "./review-results-modal";
 import { FinalManuscriptForm } from "./final-manuscript-form";
@@ -128,11 +127,6 @@ export default async function SubmissionDetailPage({
               </li>
             ))}
         </ul>
-        {(isOwner || isEditor) && submission.status === "UNDER_REVIEW" && (
-          <div className="mt-4">
-            <RevisionUploadForm submissionId={submission.id} />
-          </div>
-        )}
         {isOwner && submission.status === "REVISION_REQUESTED" && (
           <div className="mt-4">
             <Link

@@ -148,6 +148,7 @@ model SubmissionFile {
   submissionId String
   submission   Submission         @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   version      Int                @default(1)
+  round        Int                @default(1)
   kind         SubmissionFileKind @default(MAIN)
   originalName String
   storedPath   String

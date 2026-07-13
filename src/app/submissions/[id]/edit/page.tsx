@@ -18,7 +18,7 @@ export default async function EditSubmissionPage({
     include: {
       coauthors: { orderBy: { order: "asc" } },
       revisionSnapshots: { orderBy: { round: "asc" } },
-      files: { where: { kind: "MAIN" }, orderBy: { version: "asc" } },
+      files: { orderBy: { version: "asc" } },
       decisions: { orderBy: { decidedAt: "desc" }, take: 1 },
     },
   });
@@ -106,6 +106,13 @@ export default async function EditSubmissionPage({
               isCorresponding: a.isCorresponding,
             })),
           }}
+          existingFiles={submission.files.map((f) => ({
+            id: f.id,
+            kind: f.kind,
+            originalName: f.originalName,
+            version: f.version,
+            uploadedAt: f.uploadedAt,
+          }))}
         />
       </div>
     </div>

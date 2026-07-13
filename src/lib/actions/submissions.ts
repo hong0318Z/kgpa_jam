@@ -4,7 +4,7 @@ import path from "path";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { requireRole, requireSession, ForbiddenError, ADMIN_ROLES } from "@/lib/rbac";
-import { saveUploadedFile } from "@/lib/storage";
+import { saveUploadedFile, deleteStoredFile } from "@/lib/storage";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
@@ -166,96 +166,6 @@ export async function createSubmission(
   }
 
   redirect(`/submissions/${submission.id}`);
-}
-
-export async function uploadRevision(
-  submissionId: string,
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
-  const session = await requireSession();
-  const submission = await prisma.submission.findUniqueOrThrow({
-    where: { id: submissionId },
-  });
-  if (
-    !ADMIN_ROLES.includes(session.user.role) &&
-    submission.authorId !== session.user.id
-  ) {
-    throw new ForbiddenError("본인의 투고만 수정할 수 있습니다.");
-  }
-
-  const response = String(formData.get("response") ?? "").trim();
-  const files = formData
-    .getAll("file")
-    .filter((f): f is File => f instanceof File && f.size > 0)
-    .filter((f) => ALLOWED_EXT.includes(path.extname(f.name).toLowerCase()));
-
-  if (!response && files.length === 0) {
-    return { error: "답변 또는 수정 파일을 하나 이상 제출해 주세요." };
-  }
-
-  if (files.length > 0) {
-    const latest = await prisma.submissionFile.findFirst({
-      where: { submissionId },
-      orderBy: { version: "desc" },
-    });
-    const nextVersion = (latest?.version ?? 0) + 1;
-
-    for (const file of files) {
-      const saved = await saveUploadedFile(submissionId, file);
-      await prisma.submissionFile.create({
-        data: { submissionId, version: nextVersion, ...saved },
-      });
-
-      await logAudit({
-        actorId: session.user.id,
-        action: "FILE_UPLOADED",
-        targetType: "Submission",
-        targetId: submissionId,
-        metadata: { originalName: saved.originalName, version: nextVersion },
-      });
-    }
-  }
-
-  if (response) {
-    await prisma.authorResponse.create({
-      data: { submissionId, authorId: session.user.id, content: response },
-    });
-    await logAudit({
-      actorId: session.user.id,
-      action: "AUTHOR_RESPONSE_SUBMITTED",
-      targetType: "Submission",
-      targetId: submissionId,
-    });
-  }
-
-  if (submission.status === "REVISION_REQUESTED" && files.length > 0) {
-    const nextRound = submission.round + 1;
-    await prisma.submission.update({
-      where: { id: submissionId },
-      data: { status: "UNDER_REVIEW", round: nextRound },
-    });
-    await prisma.statusLog.create({
-      data: {
-        submissionId,
-        fromStatus: "REVISION_REQUESTED",
-        toStatus: "UNDER_REVIEW",
-        note: `재투고 (${nextRound}차)`,
-      },
-    });
-    await logAudit({
-      actorId: session.user.id,
-      action: "SUBMISSION_RESUBMITTED",
-      targetType: "Submission",
-      targetId: submissionId,
-      metadata: { round: nextRound },
-    });
-  }
-
-  revalidatePath(`/submissions/${submissionId}`);
-  revalidatePath("/reviews");
-  revalidatePath("/");
-  return {};
 }
 
 const DEFAULT_REVIEW_PERIOD_DAYS = 14;
@@ -450,7 +360,7 @@ export async function submitFinalManuscript(
   for (const file of files) {
     const saved = await saveUploadedFile(submissionId, file);
     await prisma.submissionFile.create({
-      data: { submissionId, version: 1, kind: "FINAL_MANUSCRIPT", ...saved },
+      data: { submissionId, version: 1, round: submission.round, kind: "FINAL_MANUSCRIPT", ...saved },
     });
     await logAudit({
       actorId: session.user.id,
@@ -508,7 +418,7 @@ export async function uploadCopyrightAssignment(
   for (const file of files) {
     const saved = await saveUploadedFile(submissionId, file);
     await prisma.submissionFile.create({
-      data: { submissionId, version: 1, kind: "COPYRIGHT_ASSIGNMENT", ...saved },
+      data: { submissionId, version: 1, round: submission.round, kind: "COPYRIGHT_ASSIGNMENT", ...saved },
     });
     await logAudit({
       actorId: session.user.id,
@@ -547,6 +457,7 @@ export async function resubmitSubmission(
     .map((k) => k.trim())
     .filter(Boolean);
   const fields = formData.getAll("fields").map((f) => String(f)).filter(Boolean);
+  const response = String(formData.get("response") ?? "").trim();
   const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
   const appendixFiles = formData
     .getAll("appendixFile")
@@ -568,8 +479,11 @@ export async function resubmitSubmission(
   if (!title || !abstract) {
     return { error: "제목과 초록을 입력해 주세요." };
   }
-  if (files.length === 0) {
-    return { error: "논문 파일을 첨부해 주세요." };
+  const remainingMainCount = await prisma.submissionFile.count({
+    where: { submissionId, kind: "MAIN" },
+  });
+  if (remainingMainCount === 0 && files.length === 0) {
+    return { error: "논문 파일을 최소 1개 이상 첨부해 주세요." };
   }
   for (const file of [...files, ...appendixFiles, ...copyrightFiles, ...similarityCheckFiles]) {
     if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
@@ -620,7 +534,7 @@ export async function resubmitSubmission(
   for (const file of files) {
     const saved = await saveUploadedFile(submissionId, file);
     await prisma.submissionFile.create({
-      data: { submissionId, version: mainVersion, kind: "MAIN", ...saved },
+      data: { submissionId, version: mainVersion, round: nextRound, kind: "MAIN", ...saved },
     });
     mainVersion += 1;
     await logAudit({
@@ -634,19 +548,31 @@ export async function resubmitSubmission(
   for (const file of appendixFiles) {
     const saved = await saveUploadedFile(submissionId, file);
     await prisma.submissionFile.create({
-      data: { submissionId, version: nextRound, kind: "APPENDIX", ...saved },
+      data: { submissionId, version: nextRound, round: nextRound, kind: "APPENDIX", ...saved },
     });
   }
   for (const file of similarityCheckFiles) {
     const saved = await saveUploadedFile(submissionId, file);
     await prisma.submissionFile.create({
-      data: { submissionId, version: nextRound, kind: "SIMILARITY_REPORT", ...saved },
+      data: { submissionId, version: nextRound, round: nextRound, kind: "SIMILARITY_REPORT", ...saved },
     });
   }
   for (const file of copyrightFiles) {
     const saved = await saveUploadedFile(submissionId, file);
     await prisma.submissionFile.create({
-      data: { submissionId, version: nextRound, kind: "COPYRIGHT_ASSIGNMENT", ...saved },
+      data: { submissionId, version: nextRound, round: nextRound, kind: "COPYRIGHT_ASSIGNMENT", ...saved },
+    });
+  }
+
+  if (response) {
+    await prisma.authorResponse.create({
+      data: { submissionId, authorId: session.user.id, content: response },
+    });
+    await logAudit({
+      actorId: session.user.id,
+      action: "AUTHOR_RESPONSE_SUBMITTED",
+      targetType: "Submission",
+      targetId: submissionId,
     });
   }
 
@@ -680,4 +606,40 @@ export async function resubmitSubmission(
   revalidatePath("/reviews");
   revalidatePath("/");
   redirect(`/submissions/${submissionId}`);
+}
+
+export async function deleteSubmissionFile(fileId: string): Promise<{ error?: string }> {
+  const session = await requireSession();
+
+  const file = await prisma.submissionFile.findUnique({
+    where: { id: fileId },
+    include: { submission: true },
+  });
+  if (!file) {
+    return { error: "이미 삭제된 파일입니다." };
+  }
+  if (
+    file.submission.authorId !== session.user.id &&
+    !ADMIN_ROLES.includes(session.user.role)
+  ) {
+    return { error: "본인의 투고만 수정할 수 있습니다." };
+  }
+  if (file.submission.status !== "REVISION_REQUESTED" && !ADMIN_ROLES.includes(session.user.role)) {
+    return { error: "수정요청 상태의 투고만 파일을 삭제할 수 있습니다." };
+  }
+
+  await prisma.submissionFile.delete({ where: { id: fileId } });
+  await deleteStoredFile(file.storedPath);
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_UPDATED",
+    targetType: "Submission",
+    targetId: file.submissionId,
+    metadata: { title: file.submission.title, deletedFile: file.originalName },
+  });
+
+  revalidatePath(`/submissions/${file.submissionId}`);
+  revalidatePath(`/submissions/${file.submissionId}/edit`);
+  return {};
 }

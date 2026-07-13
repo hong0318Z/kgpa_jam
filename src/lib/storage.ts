@@ -65,3 +65,11 @@ export function resolveStoredPath(storedPath: string) {
 export async function readStoredFile(storedPath: string) {
   return fs.readFile(resolveStoredPath(storedPath));
 }
+
+export async function deleteStoredFile(storedPath: string) {
+  try {
+    await fs.unlink(resolveStoredPath(storedPath));
+  } catch {
+    // 이미 없으면 무시
+  }
+}
