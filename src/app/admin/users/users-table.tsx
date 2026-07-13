@@ -9,9 +9,8 @@ import {
   bulkChangeRole,
   bulkSetActive,
   deleteUser,
+  sendWelcomeEmail,
 } from "@/lib/actions/users";
-// 가입환영 메일 기능은 학회 메일서버의 TLS 호환 문제로 임시 비활성화.
-// src/lib/actions/users.ts의 sendWelcomeEmail, src/lib/mail.ts는 그대로 남겨둠.
 import { formatDateTime } from "@/lib/date";
 import { GoogleIcon } from "@/components/google-signin-button";
 
@@ -65,6 +64,39 @@ function UserRoleCell({ user, isAdmin }: { user: UserRow; isAdmin: boolean }) {
       >
         변경
       </button>
+    </div>
+  );
+}
+
+function SendWelcomeEmailButton({ user }: { user: UserRow }) {
+  const [status, setStatus] = useState<"idle" | "sent" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function send() {
+    startTransition(async () => {
+      const result = await sendWelcomeEmail(user.id);
+      if (result.error) {
+        setStatus("error");
+        setError(result.error);
+      } else {
+        setStatus("sent");
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={send}
+        className="text-xs text-gray-500 hover:underline disabled:opacity-40"
+      >
+        {pending ? "발송 중..." : "가입환영 메일 발송"}
+      </button>
+      {status === "sent" && <span className="text-xs text-green-600">발송 완료</span>}
+      {status === "error" && <span className="text-xs text-red-600">{error}</span>}
     </div>
   );
 }
@@ -289,6 +321,7 @@ export function UsersTable({ users, isAdmin }: { users: UserRow[]; isAdmin: bool
                       비밀번호 초기화
                     </button>
                   )}
+                  {isAdmin && <SendWelcomeEmailButton user={u} />}
                   {isAdmin && <DeleteUserButton user={u} />}
                 </div>
               </td>
