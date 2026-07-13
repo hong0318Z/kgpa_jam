@@ -34,6 +34,9 @@ export async function createSubmission(
   const similarityCheckFiles = formData
     .getAll("similarityCheckFile")
     .filter((f): f is File => f instanceof File && f.size > 0);
+  const copyrightFiles = formData
+    .getAll("copyrightFile")
+    .filter((f): f is File => f instanceof File && f.size > 0);
   const coauthorsRaw = String(formData.get("coauthors") ?? "[]");
   let coauthors: CoauthorInput[] = [];
   try {
@@ -54,7 +57,7 @@ export async function createSubmission(
   if (files.length === 0) {
     return { error: "논문 파일을 첨부해 주세요." };
   }
-  for (const file of [...files, ...appendixFiles]) {
+  for (const file of [...files, ...appendixFiles, ...copyrightFiles]) {
     if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
       return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
     }
@@ -96,6 +99,18 @@ export async function createSubmission(
         submissionId: submission.id,
         version: 1,
         kind: "SIMILARITY_REPORT",
+        ...saved,
+      },
+    });
+  }
+
+  for (const file of copyrightFiles) {
+    const saved = await saveUploadedFile(submission.id, file);
+    await prisma.submissionFile.create({
+      data: {
+        submissionId: submission.id,
+        version: 1,
+        kind: "COPYRIGHT_ASSIGNMENT",
         ...saved,
       },
     });
@@ -467,7 +482,13 @@ export async function uploadCopyrightAssignment(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await requireRole(ADMIN_ROLES);
+  const session = await requireSession();
+  const submission = await prisma.submission.findUniqueOrThrow({
+    where: { id: submissionId },
+  });
+  if (submission.authorId !== session.user.id && !ADMIN_ROLES.includes(session.user.role)) {
+    throw new ForbiddenError("본인의 투고만 업로드할 수 있습니다.");
+  }
 
   const files = formData
     .getAll("file")
@@ -499,5 +520,52 @@ export async function uploadCopyrightAssignment(
   }
 
   revalidatePath(`/admin/submissions/${submissionId}/assign`);
+  revalidatePath(`/submissions/${submissionId}`);
   return { success: "저작권 위임서가 등록되었습니다." };
+}
+
+export async function updateSubmissionMetadata(
+  submissionId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireSession();
+  const submission = await prisma.submission.findUniqueOrThrow({
+    where: { id: submissionId },
+  });
+  if (submission.authorId !== session.user.id && !ADMIN_ROLES.includes(session.user.role)) {
+    throw new ForbiddenError("본인의 투고만 수정할 수 있습니다.");
+  }
+  if (submission.status !== "REVISION_REQUESTED") {
+    return { error: "수정요청 상태의 투고만 내용을 수정할 수 있습니다." };
+  }
+
+  const title = String(formData.get("title") ?? "").trim();
+  const abstract = String(formData.get("abstract") ?? "").trim();
+  const keywords = String(formData.get("keywords") ?? "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+  const fields = formData.getAll("fields").map((f) => String(f)).filter(Boolean);
+
+  if (!title || !abstract) {
+    return { error: "제목과 초록을 입력해 주세요." };
+  }
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { title, abstract, keywords, fields },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_UPDATED",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { title },
+  });
+
+  revalidatePath(`/submissions/${submissionId}`);
+  revalidatePath(`/submissions/${submissionId}/edit`);
+  return { success: "투고 내용이 저장되었습니다." };
 }

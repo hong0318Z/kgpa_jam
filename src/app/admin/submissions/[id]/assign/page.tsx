@@ -12,7 +12,7 @@ import {
 } from "@/lib/actions/submissions";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
-import { CopyrightUploadForm } from "./copyright-upload-form";
+import { CopyrightUploadForm } from "@/components/copyright-upload-form";
 
 const DUE_SOON_THRESHOLD_DAYS = 5;
 

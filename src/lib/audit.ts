@@ -262,6 +262,7 @@ export function formatAuditMetadata(
     case "REVIEWER_BANK_ACCOUNT_UPDATED":
       return `${m.bankName ?? "-"} / 예금주: ${m.bankAccountHolder ?? "-"}`;
     case "SUBMISSION_CREATED":
+    case "SUBMISSION_UPDATED":
       return `제목: ${m.title ?? "-"}`;
     case "RESOURCE_UPLOADED":
       return `${m.title ?? "-"} (${m.originalName ?? "-"})`;

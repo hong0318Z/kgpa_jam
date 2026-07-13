@@ -103,6 +103,23 @@ export function SubmissionForm({
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
         />
       </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">저작권 위임서 (선택)</label>
+        <p className="mb-2 text-xs text-gray-500">
+          게재 확정 전까지 제출하시면 되며, 지금 바로 첨부하셔도 됩니다.{" "}
+          <a
+            href="/templates/copyright-transfer-agreement.docx"
+            className="text-gray-700 underline"
+          >
+            양식 다운로드
+          </a>
+        </p>
+        <FileDropzone
+          name="copyrightFile"
+          accept=".pdf,.hwp,.docx"
+          hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
+        />
+      </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button
         type="submit"
