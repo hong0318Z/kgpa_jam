@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { DecisionForm } from "./decision-form";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { SUBMISSION_STATUS_LABELS, RECOMMENDATION_LABELS } from "@/lib/labels";
@@ -67,6 +68,12 @@ export default async function DecideSubmissionPage({
         <p className="mt-1 text-sm font-medium text-gray-700">
           현재 상태: {SUBMISSION_STATUS_LABELS[submission.status] ?? submission.status} · {submission.round}차 심사
         </p>
+        <Link
+          href={`/admin/submissions/${submission.id}/assign`}
+          className="mt-2 inline-block text-xs text-gray-500 underline hover:text-gray-800"
+        >
+          심사위원 배정 현황 관리
+        </Link>
       </div>
 
       <div className="rounded border border-gray-200 bg-white p-6">

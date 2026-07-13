@@ -387,53 +387,6 @@ export async function submitFinalManuscript(
   return { success: "최종 원고가 제출되었습니다." };
 }
 
-export async function uploadCopyrightAssignment(
-  submissionId: string,
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
-  const session = await requireSession();
-  const submission = await prisma.submission.findUniqueOrThrow({
-    where: { id: submissionId },
-  });
-  if (submission.authorId !== session.user.id && !ADMIN_ROLES.includes(session.user.role)) {
-    throw new ForbiddenError("본인의 투고만 업로드할 수 있습니다.");
-  }
-
-  const files = formData
-    .getAll("file")
-    .filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length === 0) {
-    return { error: "파일을 첨부해 주세요." };
-  }
-  for (const file of files) {
-    if (![".pdf", ".hwp", ".docx"].includes(path.extname(file.name).toLowerCase())) {
-      return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
-    }
-    if (file.size > 20 * 1024 * 1024) {
-      return { error: "파일 크기는 파일당 20MB를 초과할 수 없습니다." };
-    }
-  }
-
-  for (const file of files) {
-    const saved = await saveUploadedFile(submissionId, file);
-    await prisma.submissionFile.create({
-      data: { submissionId, version: 1, round: submission.round, kind: "COPYRIGHT_ASSIGNMENT", ...saved },
-    });
-    await logAudit({
-      actorId: session.user.id,
-      action: "FILE_UPLOADED",
-      targetType: "Submission",
-      targetId: submissionId,
-      metadata: { originalName: saved.originalName, kind: "COPYRIGHT_ASSIGNMENT" },
-    });
-  }
-
-  revalidatePath(`/admin/submissions/${submissionId}/assign`);
-  revalidatePath(`/submissions/${submissionId}`);
-  return { success: "저작권 위임서가 등록되었습니다." };
-}
-
 export async function resubmitSubmission(
   submissionId: string,
   _prev: ActionResult,

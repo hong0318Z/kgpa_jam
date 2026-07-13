@@ -8,11 +8,9 @@ import {
   updateReviewDueDate,
   setSubmissionUrgent,
   makeDecision,
-  uploadCopyrightAssignment,
 } from "@/lib/actions/submissions";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
-import { CopyrightUploadForm } from "@/components/copyright-upload-form";
 
 const DUE_SOON_THRESHOLD_DAYS = 5;
 
@@ -59,8 +57,8 @@ export default async function AssignReviewerPage({
     return bMatch - aMatch;
   });
 
-  const copyrightFiles = submission.files.filter((f) => f.kind === "COPYRIGHT_ASSIGNMENT");
-  const otherFiles = submission.files.filter((f) => f.kind !== "COPYRIGHT_ASSIGNMENT");
+  const allReviewsSubmitted =
+    currentRoundAssignments.length > 0 && currentRoundAssignments.every((a) => a.status === "SUBMITTED");
 
   return (
     <div className="flex flex-col gap-6">
@@ -98,6 +96,14 @@ export default async function AssignReviewerPage({
           >
             배정 완료 (목록으로)
           </Link>
+          {allReviewsSubmitted && (
+            <Link
+              href={`/admin/submissions/${submission.id}/decide`}
+              className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            >
+              심사 결과 보기 · 최종 결정하기
+            </Link>
+          )}
           <details className="inline-block">
             <summary className="cursor-pointer rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
               반려 (심사 전 반려)
@@ -135,7 +141,7 @@ export default async function AssignReviewerPage({
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">업로드 파일 전체 내역</h2>
         <ul className="space-y-1 text-sm">
-          {otherFiles.map((f) => (
+          {submission.files.map((f) => (
             <li key={f.id}>
               <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
                 [{FILE_KIND_LABELS[f.kind] ?? f.kind}] v{f.version} - {f.originalName}
@@ -143,35 +149,8 @@ export default async function AssignReviewerPage({
               <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
             </li>
           ))}
-          {otherFiles.length === 0 && <li className="text-gray-500">업로드된 파일이 없습니다.</li>}
+          {submission.files.length === 0 && <li className="text-gray-500">업로드된 파일이 없습니다.</li>}
         </ul>
-      </div>
-
-      <div className="rounded border border-gray-200 bg-white p-6">
-        <h2 className="mb-1 text-sm font-semibold text-gray-900">저작권 위임서</h2>
-        <p className="mb-3 text-xs text-gray-500">
-          이 항목은 관리자·편집위원장에게만 보이며 심사위원에게는 노출되지 않습니다.
-        </p>
-        <a
-          href="/templates/copyright-transfer-agreement.docx"
-          className="mb-3 inline-block text-sm text-gray-700 underline"
-        >
-          양식 다운로드 (저작권 이양 및 연구윤리 준수 동의서)
-        </a>
-        <ul className="mb-3 space-y-1 text-sm">
-          {copyrightFiles.map((f) => (
-            <li key={f.id}>
-              <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                {f.originalName}
-              </a>{" "}
-              <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
-            </li>
-          ))}
-          {copyrightFiles.length === 0 && (
-            <li className="text-gray-500">아직 등록된 저작권 위임서가 없습니다.</li>
-          )}
-        </ul>
-        <CopyrightUploadForm submissionId={submission.id} />
       </div>
 
       {pastRoundAssignments.length > 0 && (

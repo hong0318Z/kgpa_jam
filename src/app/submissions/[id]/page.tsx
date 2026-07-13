@@ -5,7 +5,6 @@ import Link from "next/link";
 import { CoauthorEditor } from "./coauthor-editor";
 import { ReviewResultsModal } from "./review-results-modal";
 import { FinalManuscriptForm } from "./final-manuscript-form";
-import { CopyrightUploadForm } from "@/components/copyright-upload-form";
 import { formatDate, formatDateTime } from "@/lib/date";
 import {
   SUBMISSION_STATUS_LABELS,
@@ -173,37 +172,6 @@ export default async function SubmissionDetailPage({
                 </li>
               ))}
           </ul>
-        </div>
-      )}
-
-      {(isOwner || isEditor) && (
-        <div className="rounded border border-gray-200 bg-white p-6">
-          <h2 className="mb-1 text-sm font-semibold text-gray-900">저작권 위임서</h2>
-          <p className="mb-3 text-xs text-gray-500">
-            게재 확정 시 반드시 제출해야 하는 서류입니다. 심사위원에게는 노출되지 않습니다.
-          </p>
-          <a
-            href="/templates/copyright-transfer-agreement.docx"
-            className="mb-3 inline-block text-sm text-gray-700 underline"
-          >
-            양식 다운로드 (저작권 이양 및 연구윤리 준수 동의서)
-          </a>
-          <ul className="mb-3 space-y-1 text-sm">
-            {submission.files
-              .filter((f) => f.kind === "COPYRIGHT_ASSIGNMENT")
-              .map((f) => (
-                <li key={f.id}>
-                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                    {f.originalName}
-                  </a>{" "}
-                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
-                </li>
-              ))}
-            {submission.files.filter((f) => f.kind === "COPYRIGHT_ASSIGNMENT").length === 0 && (
-              <li className="text-gray-500">아직 등록된 저작권 위임서가 없습니다.</li>
-            )}
-          </ul>
-          {isOwner && <CopyrightUploadForm submissionId={submission.id} />}
         </div>
       )}
 
