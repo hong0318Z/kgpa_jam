@@ -110,3 +110,36 @@ export async function uploadCompiledVolumeFile(
   revalidatePath(`/journal/${volumeId}`);
   return { success: "합본 파일이 업로드되었습니다." };
 }
+
+export async function deleteVolume(volumeId: string): Promise<{ error?: string }> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const volume = await prisma.volume.findUnique({
+    where: { id: volumeId },
+    include: { _count: { select: { submissions: true } } },
+  });
+  if (!volume) {
+    return { error: "이미 삭제된 발행 호입니다." };
+  }
+  if (volume._count.submissions > 0) {
+    return { error: "투고가 있는 발행 호는 삭제할 수 없습니다." };
+  }
+
+  if (volume.compiledFileStoredPath) {
+    await deleteStoredFile(volume.compiledFileStoredPath);
+  }
+
+  await prisma.volume.delete({ where: { id: volumeId } });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "VOLUME_DELETED",
+    targetType: "Volume",
+    targetId: volumeId,
+    metadata: { label: volume.label },
+  });
+
+  revalidatePath("/admin/volumes");
+  revalidatePath("/journal");
+  return {};
+}

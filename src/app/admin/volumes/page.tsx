@@ -4,6 +4,7 @@ import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { updateVolumeStatus } from "@/lib/actions/volumes";
 import { formatDate } from "@/lib/date";
 import { CompiledVolumeUploadForm } from "./compiled-volume-upload-form";
+import { DeleteVolumeButton } from "./delete-volume-button";
 
 export default async function AdminVolumesPage() {
   await requireRole(ADMIN_ROLES);
@@ -28,6 +29,7 @@ export default async function AdminVolumesPage() {
             <th className="px-4 py-2">발간예정일</th>
             <th className="px-4 py-2">상태</th>
             <th className="px-4 py-2">학술지 합본 파일</th>
+            <th className="px-4 py-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -76,6 +78,9 @@ export default async function AdminVolumesPage() {
                   </a>
                 )}
                 <CompiledVolumeUploadForm volumeId={v.id} />
+              </td>
+              <td className="px-4 py-2">
+                <DeleteVolumeButton volumeId={v.id} label={v.label} />
               </td>
             </tr>
           ))}

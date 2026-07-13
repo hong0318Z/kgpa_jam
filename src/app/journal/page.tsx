@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/date";
 
 export default async function JournalPage() {
   const volumes = await prisma.volume.findMany({
+    where: { status: "PUBLISHED" },
     orderBy: { createdAt: "desc" },
     include: {
       _count: {

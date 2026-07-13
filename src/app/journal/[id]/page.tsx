@@ -20,7 +20,7 @@ export default async function JournalVolumePage({
       },
     },
   });
-  if (!volume) notFound();
+  if (!volume || volume.status !== "PUBLISHED") notFound();
 
   return (
     <div>
