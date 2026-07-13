@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireSession, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { CoauthorEditor } from "./coauthor-editor";
 import { ReviewResultsModal } from "./review-results-modal";
 import { FinalManuscriptForm } from "./final-manuscript-form";
@@ -110,71 +109,6 @@ export default async function SubmissionDetailPage({
         )}
       </div>
 
-      <div className="rounded border border-gray-200 bg-white p-6">
-        <h2 className="mb-3 text-sm font-semibold text-gray-900">첨부 파일</h2>
-        <ul className="space-y-1 text-sm">
-          {submission.files
-            .filter((f) => f.kind === "MAIN")
-            .map((f) => (
-              <li key={f.id}>
-                <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                  v{f.version} - {f.originalName}
-                </a>{" "}
-                <span className="text-xs text-gray-500">
-                  ({formatDateTime(f.uploadedAt)})
-                </span>
-              </li>
-            ))}
-        </ul>
-        {isOwner && submission.status === "REVISION_REQUESTED" && (
-          <div className="mt-4">
-            <Link
-              href={`/submissions/${submission.id}/edit`}
-              className="inline-block rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-            >
-              투고 내용 수정하기
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {submission.files.some((f) => f.kind === "APPENDIX") && (
-        <div className="rounded border border-gray-200 bg-white p-6">
-          <h2 className="mb-3 text-sm font-semibold text-gray-900">부록 파일</h2>
-          <ul className="space-y-1 text-sm">
-            {submission.files
-              .filter((f) => f.kind === "APPENDIX")
-              .sort((a, b) => a.version - b.version)
-              .map((f, i) => (
-                <li key={f.id}>
-                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                    부록 ({i + 1}) - {f.originalName}
-                  </a>{" "}
-                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
-
-      {submission.files.some((f) => f.kind === "SIMILARITY_REPORT") && (
-        <div className="rounded border border-gray-200 bg-white p-6">
-          <h2 className="mb-3 text-sm font-semibold text-gray-900">논문유사도검사결과</h2>
-          <ul className="space-y-1 text-sm">
-            {submission.files
-              .filter((f) => f.kind === "SIMILARITY_REPORT")
-              .map((f) => (
-                <li key={f.id}>
-                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                    {f.originalName}
-                  </a>{" "}
-                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
-
       {(isOwner || isEditor) && submission.status === "ACCEPTED" && (
         <div className="rounded border border-gray-200 bg-white p-6">
           <h2 className="mb-1 text-sm font-semibold text-gray-900">최종 원고 제출</h2>
@@ -238,18 +172,30 @@ export default async function SubmissionDetailPage({
               심사가 진행 중입니다. 최종 결과가 나오면 심사 의견을 확인하실 수 있습니다.
             </p>
           ) : (
-            <ReviewResultsModal
-              results={visibleReviewAssignments
-                .filter((a) => a.review)
-                .map((a) => ({
-                  id: a.id,
-                  round: a.round,
-                  roundIndex: a.roundIndex,
-                  recommendationLabel:
-                    RECOMMENDATION_LABELS[a.review!.recommendation] ?? a.review!.recommendation,
-                  commentsToAuthor: a.review!.commentsToAuthor,
-                }))}
-            />
+            <>
+              <ReviewResultsModal
+                results={visibleReviewAssignments
+                  .filter((a) => a.review)
+                  .map((a) => ({
+                    id: a.id,
+                    round: a.round,
+                    roundIndex: a.roundIndex,
+                    recommendationLabel:
+                      RECOMMENDATION_LABELS[a.review!.recommendation] ?? a.review!.recommendation,
+                    commentsToAuthor: a.review!.commentsToAuthor,
+                  }))}
+                editHref={
+                  isOwner && submission.status === "REVISION_REQUESTED"
+                    ? `/submissions/${submission.id}/edit`
+                    : undefined
+                }
+              />
+              {isOwner && submission.status === "REVISION_REQUESTED" && (
+                <p className="mt-2 text-xs text-gray-500">
+                  심사 결과 및 의견을 확인하시면 투고 내용 수정하기 버튼이 활성화됩니다.
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -264,6 +210,61 @@ export default async function SubmissionDetailPage({
                 <p className="mt-1 whitespace-pre-wrap text-gray-800">{r.content}</p>
               </li>
             ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="rounded border border-gray-200 bg-white p-6">
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">첨부 파일</h2>
+        <ul className="space-y-1 text-sm">
+          {submission.files
+            .filter((f) => f.kind === "MAIN")
+            .map((f) => (
+              <li key={f.id}>
+                <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                  v{f.version} - {f.originalName}
+                </a>{" "}
+                <span className="text-xs text-gray-500">
+                  ({formatDateTime(f.uploadedAt)})
+                </span>
+              </li>
+            ))}
+        </ul>
+      </div>
+
+      {submission.files.some((f) => f.kind === "APPENDIX") && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">부록 파일</h2>
+          <ul className="space-y-1 text-sm">
+            {submission.files
+              .filter((f) => f.kind === "APPENDIX")
+              .sort((a, b) => a.version - b.version)
+              .map((f, i) => (
+                <li key={f.id}>
+                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                    부록 ({i + 1}) - {f.originalName}
+                  </a>{" "}
+                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
+      {submission.files.some((f) => f.kind === "SIMILARITY_REPORT") && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">논문유사도검사결과</h2>
+          <ul className="space-y-1 text-sm">
+            {submission.files
+              .filter((f) => f.kind === "SIMILARITY_REPORT")
+              .map((f) => (
+                <li key={f.id}>
+                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                    {f.originalName}
+                  </a>{" "}
+                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+                </li>
+              ))}
           </ul>
         </div>
       )}

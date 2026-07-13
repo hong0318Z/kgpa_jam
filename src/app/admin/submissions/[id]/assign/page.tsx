@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   assignReviewer,
@@ -113,7 +113,6 @@ export default async function AssignReviewerPage({
                 "use server";
                 const note = String(formData.get("note") ?? "").trim();
                 await makeDecision(submission.id, "REVISION_REQUESTED", note);
-                redirect("/admin/submissions");
               }}
               className="mt-2 flex max-w-md flex-col gap-2 rounded border border-gray-200 bg-gray-50 p-3"
             >

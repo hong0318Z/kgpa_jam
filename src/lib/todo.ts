@@ -24,6 +24,18 @@ export async function getTodoItems(user: { id: string; role: Role }): Promise<To
     });
   }
 
+  const myAcceptedWithoutFinal = await prisma.submission.findMany({
+    where: { authorId: user.id, status: "ACCEPTED", finalManuscriptSubmittedAt: null },
+    select: { id: true, title: true },
+  });
+  for (const s of myAcceptedWithoutFinal) {
+    items.push({
+      label: `『${s.title}』 게재가 승인되었습니다. 최종 원고를 제출해 주세요`,
+      href: `/submissions/${s.id}`,
+      urgent: true,
+    });
+  }
+
   const DUE_SOON_THRESHOLD_DAYS = 5;
 
   if (REVIEW_ROLES.includes(user.role)) {

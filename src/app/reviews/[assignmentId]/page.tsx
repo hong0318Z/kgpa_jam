@@ -43,12 +43,29 @@ export default async function ReviewDetailPage({
     .sort((a, b) => a.version - b.version);
   const similarityFiles = currentRoundFiles.filter((f) => f.kind === "SIMILARITY_REPORT");
 
+  const allRoundCounts: Record<number, number> = {};
+  const allAssignments = await prisma.reviewAssignment.findMany({
+    where: {
+      submissionId: assignment.submissionId,
+      round: { lte: assignment.round },
+      id: { not: assignment.id },
+    },
+    include: { review: true },
+    orderBy: [{ round: "asc" }, { assignedAt: "asc" }],
+  });
+  const numberedAllAssignments = allAssignments.map((a) => {
+    allRoundCounts[a.round] = (allRoundCounts[a.round] ?? 0) + 1;
+    return { ...a, roundIndex: allRoundCounts[a.round] };
+  });
+  const pastAssignments = numberedAllAssignments.filter((a) => a.round < assignment.round);
+
+  // 이전 회차는 실제로 파일이 새로 올라오지 않은 회차(기존 파일을 그대로 유지한 재투고)도
+  // 있을 수 있으므로, 파일이 아니라 심사 배정 기록을 기준으로 이전 회차 목록을 구성한다.
   const pastRounds = Array.from(
-    new Set(
-      assignment.submission.files
-        .filter((f) => f.round < assignment.round)
-        .map((f) => f.round),
-    ),
+    new Set([
+      ...assignment.submission.files.filter((f) => f.round < assignment.round).map((f) => f.round),
+      ...pastAssignments.map((a) => a.round),
+    ]),
   ).sort((a, b) => a - b);
 
   const pastRoundFiles = new Map(
@@ -67,22 +84,6 @@ export default async function ReviewDetailPage({
       },
     ]),
   );
-
-  const allRoundCounts: Record<number, number> = {};
-  const allAssignments = await prisma.reviewAssignment.findMany({
-    where: {
-      submissionId: assignment.submissionId,
-      round: { lte: assignment.round },
-      id: { not: assignment.id },
-    },
-    include: { review: true },
-    orderBy: [{ round: "asc" }, { assignedAt: "asc" }],
-  });
-  const numberedAllAssignments = allAssignments.map((a) => {
-    allRoundCounts[a.round] = (allRoundCounts[a.round] ?? 0) + 1;
-    return { ...a, roundIndex: allRoundCounts[a.round] };
-  });
-  const pastAssignments = numberedAllAssignments.filter((a) => a.round < assignment.round);
 
   const now = new Date();
   const overdue = !!assignment.dueDate && assignment.status !== "SUBMITTED" && assignment.dueDate < now;
@@ -190,6 +191,11 @@ export default async function ReviewDetailPage({
                       심사번호 {caseNumber} 부록 ({i + 1}) ({round}차심사) 다운로드
                     </a>
                   ))}
+                  {files.main.length === 0 && files.similarity.length === 0 && files.appendix.length === 0 && (
+                    <p className="text-sm text-gray-500">
+                      이 회차에 새로 등록된 파일이 없습니다 (이전 회차 파일과 동일).
+                    </p>
+                  )}
                 </div>
                 {reviewsForRound.length > 0 && (
                   <ul className="mt-3 space-y-3 border-t border-gray-200 pt-3 text-sm">
@@ -206,8 +212,13 @@ export default async function ReviewDetailPage({
                               {a.review.score != null && ` (점수: ${a.review.score})`}
                             </p>
                             <p className="mt-1 whitespace-pre-wrap text-gray-700">
-                              {a.review.commentsToAuthor}
+                              (저자 공개 의견) {a.review.commentsToAuthor}
                             </p>
+                            {a.review.commentsToEditor && (
+                              <p className="mt-1 whitespace-pre-wrap italic text-gray-500">
+                                (편집자 전용 의견) {a.review.commentsToEditor}
+                              </p>
+                            )}
                           </>
                         ) : (
                           <p className="text-gray-500">심사를 제출하지 않았습니다.</p>

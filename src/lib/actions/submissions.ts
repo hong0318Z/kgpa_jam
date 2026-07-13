@@ -301,6 +301,8 @@ export async function makeDecision(
 
   revalidatePath(`/submissions/${submissionId}`);
   revalidatePath(`/admin/submissions/${submissionId}/decide`);
+  revalidatePath("/admin/submissions");
+  redirect("/admin/submissions");
 }
 
 export async function deleteSubmission(submissionId: string): Promise<{ error?: string }> {
@@ -387,6 +389,69 @@ export async function submitFinalManuscript(
   return { success: "최종 원고가 제출되었습니다." };
 }
 
+export async function approveFinalManuscript(submissionId: string): Promise<{ error?: string }> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const submission = await prisma.submission.findUnique({ where: { id: submissionId } });
+  if (!submission) {
+    return { error: "존재하지 않는 투고입니다." };
+  }
+  if (!submission.finalManuscriptSubmittedAt) {
+    return { error: "최종 원고가 아직 제출되지 않았습니다." };
+  }
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { finalManuscriptApprovedAt: new Date() },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "FINAL_MANUSCRIPT_APPROVED",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { title: submission.title },
+  });
+
+  revalidatePath("/admin/submissions");
+  revalidatePath(`/submissions/${submissionId}`);
+  revalidatePath("/admin/publications");
+  redirect("/admin/submissions");
+}
+
+export async function rejectFinalManuscript(
+  submissionId: string,
+  note: string,
+): Promise<{ error?: string }> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const submission = await prisma.submission.findUnique({ where: { id: submissionId } });
+  if (!submission) {
+    return { error: "존재하지 않는 투고입니다." };
+  }
+  if (!submission.finalManuscriptSubmittedAt) {
+    return { error: "최종 원고가 아직 제출되지 않았습니다." };
+  }
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { finalManuscriptSubmittedAt: null, finalManuscriptApprovedAt: null },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "FINAL_MANUSCRIPT_REJECTED",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { title: submission.title, note },
+  });
+
+  revalidatePath("/admin/submissions");
+  revalidatePath(`/submissions/${submissionId}`);
+  revalidatePath("/admin/publications");
+  redirect("/admin/submissions");
+}
+
 export async function resubmitSubmission(
   submissionId: string,
   _prev: ActionResult,
@@ -464,18 +529,26 @@ export async function resubmitSubmission(
     },
   });
 
-  const nextRound = submission.round + 1;
+  // 심사위원 배정 기록이 있는 회차에서만 재투고 시 회차를 증가시킨다.
+  // 심사 배정 전(반려) 상태에서 재투고한 경우에는 같은 회차를 유지하고
+  // 심사위원 배정전 상태(SUBMITTED)로 되돌린다.
+  const hadAssignmentThisRound =
+    (await prisma.reviewAssignment.count({
+      where: { submissionId, round: submission.round },
+    })) > 0;
+  const nextRound = hadAssignmentThisRound ? submission.round + 1 : submission.round;
+  const nextStatus = hadAssignmentThisRound ? "UNDER_REVIEW" : "SUBMITTED";
   await prisma.submission.update({
     where: { id: submissionId },
-    data: { title, abstract, keywords, fields, status: "UNDER_REVIEW", round: nextRound },
+    data: { title, abstract, keywords, fields, status: nextStatus, round: nextRound },
   });
 
   await prisma.statusLog.create({
     data: {
       submissionId,
       fromStatus: "REVISION_REQUESTED",
-      toStatus: "UNDER_REVIEW",
-      note: `재투고 (${nextRound}차)`,
+      toStatus: nextStatus,
+      note: hadAssignmentThisRound ? `재투고 (${nextRound}차)` : "재투고 (심사위원 배정전)",
     },
   });
 

@@ -106,6 +106,7 @@ model Submission {
   isUrgent           Boolean          @default(false)
   fields             String[]         @default([])
   finalManuscriptSubmittedAt DateTime?
+  finalManuscriptApprovedAt  DateTime?
   authorId  String
   author    User             @relation("AuthorSubmissions", fields: [authorId], references: [id])
   volumeId  String

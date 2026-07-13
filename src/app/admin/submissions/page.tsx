@@ -8,7 +8,11 @@ export default async function AdminSubmissionsPage() {
   const session = await requireRole(ADMIN_ROLES);
   const canDelete = session.user.role === "ADMIN" || session.user.role === "CHIEF_EDITOR";
   const submissions = await prisma.submission.findMany({
-    include: { author: true, volume: true, assignments: { select: { round: true, status: true } } },
+    include: {
+      author: true,
+      volume: true,
+      assignments: { select: { round: true, status: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -59,6 +63,19 @@ export default async function AdminSubmissionsPage() {
                     >
                       결정
                     </Link>
+                    {s.status === "ACCEPTED" && s.finalManuscriptSubmittedAt && !s.finalManuscriptApprovedAt && (
+                      <Link
+                        href={`/admin/submissions/${s.id}/final-manuscript`}
+                        className="rounded border border-amber-400 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                      >
+                        최종 확인
+                      </Link>
+                    )}
+                    {s.finalManuscriptApprovedAt && (
+                      <span className="rounded border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                        확정됨
+                      </span>
+                    )}
                     <Link
                       href={`/submissions/${s.id}`}
                       className="rounded bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-700"

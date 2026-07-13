@@ -3,6 +3,7 @@ import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 
 const ADMIN_LINKS = [
   { href: "/admin/submissions", label: "투고 관리" },
+  { href: "/admin/publications", label: "확정논문" },
   { href: "/admin/volumes", label: "발행 호 관리" },
   { href: "/admin/users", label: "사용자 관리" },
   { href: "/admin/audit-logs", label: "감사 로그" },

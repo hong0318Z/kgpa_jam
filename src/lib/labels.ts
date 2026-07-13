@@ -1,5 +1,5 @@
 export const SUBMISSION_STATUS_LABELS: Record<string, string> = {
-  SUBMITTED: "투고완료",
+  SUBMITTED: "심사위원 배정전",
   UNDER_REVIEW: "심사중",
   REVISION_REQUESTED: "수정요청",
   ACCEPTED: "게재승인",
