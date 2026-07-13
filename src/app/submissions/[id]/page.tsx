@@ -3,8 +3,15 @@ import { requireSession, ADMIN_ROLES } from "@/lib/rbac";
 import { notFound, redirect } from "next/navigation";
 import { RevisionUploadForm } from "./revision-upload-form";
 import { CoauthorEditor } from "./coauthor-editor";
+import { ReviewResultsModal } from "./review-results-modal";
+import { FinalManuscriptForm } from "./final-manuscript-form";
 import { formatDate, formatDateTime } from "@/lib/date";
-import { SUBMISSION_STATUS_LABELS, REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS } from "@/lib/labels";
+import {
+  SUBMISSION_STATUS_LABELS,
+  REVIEW_STATUS_LABELS,
+  RECOMMENDATION_LABELS,
+  SUBMISSION_FIELD_LABELS,
+} from "@/lib/labels";
 
 export default async function SubmissionDetailPage({
   params,
@@ -69,6 +76,11 @@ export default async function SubmissionDetailPage({
         </p>
         <p className="mt-4 whitespace-pre-wrap text-sm text-gray-800">{submission.abstract}</p>
         <p className="mt-2 text-xs text-gray-500">키워드: {submission.keywords.join(", ")}</p>
+        {submission.fields.length > 0 && (
+          <p className="mt-1 text-xs text-gray-500">
+            분야: {submission.fields.map((f) => SUBMISSION_FIELD_LABELS[f] ?? f).join(", ")}
+          </p>
+        )}
         {submission.coauthors.length > 0 && (
           <p className="mt-2 text-xs text-gray-500">
             공저자:{" "}
@@ -101,16 +113,18 @@ export default async function SubmissionDetailPage({
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">첨부 파일</h2>
         <ul className="space-y-1 text-sm">
-          {submission.files.map((f) => (
-            <li key={f.id}>
-              <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                v{f.version} - {f.originalName}
-              </a>{" "}
-              <span className="text-xs text-gray-500">
-                ({formatDateTime(f.uploadedAt)})
-              </span>
-            </li>
-          ))}
+          {submission.files
+            .filter((f) => f.kind === "MAIN")
+            .map((f) => (
+              <li key={f.id}>
+                <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                  v{f.version} - {f.originalName}
+                </a>{" "}
+                <span className="text-xs text-gray-500">
+                  ({formatDateTime(f.uploadedAt)})
+                </span>
+              </li>
+            ))}
         </ul>
         {(isOwner || isEditor) &&
           ["UNDER_REVIEW", "REVISION_REQUESTED"].includes(submission.status) && (
@@ -119,6 +133,46 @@ export default async function SubmissionDetailPage({
             </div>
           )}
       </div>
+
+      {submission.files.some((f) => f.kind === "SIMILARITY_REPORT") && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">논문유사도검사결과</h2>
+          <ul className="space-y-1 text-sm">
+            {submission.files
+              .filter((f) => f.kind === "SIMILARITY_REPORT")
+              .map((f) => (
+                <li key={f.id}>
+                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                    {f.originalName}
+                  </a>{" "}
+                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
+      {(isOwner || isEditor) && submission.status === "ACCEPTED" && (
+        <div className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="mb-1 text-sm font-semibold text-gray-900">최종 원고 제출</h2>
+          <p className="mb-3 text-xs text-gray-500">
+            게재가 확정되었습니다. 저자명·소속 등 개인정보가 포함된 최종 원고 파일을 제출해 주세요.
+          </p>
+          <ul className="mb-3 space-y-1 text-sm">
+            {submission.files
+              .filter((f) => f.kind === "FINAL_MANUSCRIPT")
+              .map((f) => (
+                <li key={f.id}>
+                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
+                    {f.originalName}
+                  </a>{" "}
+                  <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+                </li>
+              ))}
+          </ul>
+          {isOwner && <FinalManuscriptForm submissionId={submission.id} />}
+        </div>
+      )}
 
       {isEditor && (
         <div className="rounded border border-gray-200 bg-white p-6">
@@ -133,7 +187,7 @@ export default async function SubmissionDetailPage({
                 {a.review && (
                   <div className="mt-1 text-gray-700">
                     <p>
-                      추천의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}{" "}
+                      심사의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}{" "}
                       (점수: {a.review.score ?? "-"})
                     </p>
                     <p className="mt-1 whitespace-pre-wrap">{a.review.commentsToAuthor}</p>
@@ -156,26 +210,24 @@ export default async function SubmissionDetailPage({
       {!isEditor && (
         <div className="rounded border border-gray-200 bg-white p-6">
           <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 의견</h2>
-          <ul className="space-y-3 text-sm">
-            {visibleReviewAssignments
-              .filter((a) => a.review)
-              .map((a) => (
-                <li key={a.id} className="border-b border-gray-100 pb-2 last:border-0">
-                  <p className="font-medium text-gray-900">{a.round}차 심사위원 {a.roundIndex}</p>
-                  <p>
-                    추천의견: {RECOMMENDATION_LABELS[a.review!.recommendation] ?? a.review!.recommendation}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-gray-700">{a.review!.commentsToAuthor}</p>
-                </li>
-              ))}
-            {visibleReviewAssignments.filter((a) => a.review).length === 0 && (
-              <li className="text-gray-500">
-                {submission.status === "UNDER_REVIEW"
-                  ? "심사가 진행 중입니다. 최종 결과가 나오면 심사 의견을 확인하실 수 있습니다."
-                  : "아직 등록된 심사 의견이 없습니다."}
-              </li>
-            )}
-          </ul>
+          {submission.status === "UNDER_REVIEW" ? (
+            <p className="text-sm text-gray-500">
+              심사가 진행 중입니다. 최종 결과가 나오면 심사 의견을 확인하실 수 있습니다.
+            </p>
+          ) : (
+            <ReviewResultsModal
+              results={visibleReviewAssignments
+                .filter((a) => a.review)
+                .map((a) => ({
+                  id: a.id,
+                  round: a.round,
+                  roundIndex: a.roundIndex,
+                  recommendationLabel:
+                    RECOMMENDATION_LABELS[a.review!.recommendation] ?? a.review!.recommendation,
+                  commentsToAuthor: a.review!.commentsToAuthor,
+                }))}
+            />
+          )}
         </div>
       )}
 

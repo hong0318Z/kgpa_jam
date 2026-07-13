@@ -34,7 +34,7 @@ export async function submitReview(
   ) as ReviewRecommendation;
 
   if (!commentsToAuthor || !recommendation) {
-    return { error: "저자에게 전달할 코멘트와 추천의견을 입력해 주세요." };
+    return { error: "저자에게 전달할 코멘트와 심사의견을 입력해 주세요." };
   }
 
   await prisma.review.upsert({

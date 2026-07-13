@@ -74,7 +74,7 @@ export default async function AssignReviewerPage({
                 {a.round}차 · {a.reviewer.name} -{" "}
                 {REVIEW_STATUS_LABELS[a.status] ?? a.status}
                 {a.review &&
-                  ` (추천의견: ${RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation})`}
+                  ` (심사의견: ${RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation})`}
               </li>
             ))}
           </ul>

@@ -54,7 +54,7 @@ export function ReviewForm({
           <p className="text-gray-900">{initial.score ?? "-"}</p>
         </div>
         <div>
-          <p className="font-medium text-gray-700">추천의견</p>
+          <p className="font-medium text-gray-700">심사의견</p>
           <p className="text-gray-900">
             {RECOMMENDATION_LABELS[initial.recommendation] ?? initial.recommendation}
           </p>
@@ -88,7 +88,7 @@ export function ReviewForm({
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">추천의견</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">심사의견</label>
         <select
           name="recommendation"
           required

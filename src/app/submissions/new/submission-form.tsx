@@ -5,6 +5,7 @@ import { createSubmission } from "@/lib/actions/submissions";
 import { FileDropzone } from "@/components/file-dropzone";
 import { CoauthorPicker } from "@/components/coauthor-picker";
 import { formatDate } from "@/lib/date";
+import { SUBMISSION_FIELDS } from "@/lib/labels";
 
 type Volume = {
   id: string;
@@ -58,6 +59,20 @@ export function SubmissionForm({
         <CoauthorPicker name="coauthors" />
       </div>
       <div>
+        <label className="mb-2 block text-sm font-medium text-gray-700">분야 (해당하는 항목 모두 선택)</label>
+        <div className="flex flex-col gap-2">
+          {SUBMISSION_FIELDS.map((f) => (
+            <label key={f.value} className="flex items-start gap-2 text-sm text-gray-700">
+              <input type="checkbox" name="fields" value={f.value} className="mt-1" />
+              <span>
+                <span className="font-medium text-gray-900">{f.label}</span>
+                <span className="block text-xs text-gray-500">{f.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
           논문 파일 (본문, 부록자료 등 여러 개 첨부 가능)
         </label>
@@ -67,6 +82,16 @@ export function SubmissionForm({
           required
           multiple
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (파일당 최대 20MB)"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          논문유사도검사결과 (선택, KCI 등에서 발급받은 결과서)
+        </label>
+        <FileDropzone
+          name="similarityCheckFile"
+          accept=".pdf,.hwp,.docx"
+          hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
         />
       </div>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}

@@ -78,7 +78,7 @@ export default async function DecideSubmissionPage({
               {a.review ? (
                 <>
                   <p className="text-gray-700">
-                    추천의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}{" "}
+                    심사의견: {RECOMMENDATION_LABELS[a.review.recommendation] ?? a.review.recommendation}{" "}
                     (점수: {a.review.score ?? "-"})
                   </p>
                   <p className="mt-1 whitespace-pre-wrap text-gray-700">

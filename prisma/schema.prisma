@@ -101,6 +101,8 @@ model Submission {
   status             SubmissionStatus @default(SUBMITTED)
   round              Int              @default(1)
   isUrgent           Boolean          @default(false)
+  fields             String[]         @default([])
+  finalManuscriptSubmittedAt DateTime?
   authorId  String
   author    User             @relation("AuthorSubmissions", fields: [authorId], references: [id])
   volumeId  String
@@ -116,16 +118,23 @@ model Submission {
   authorResponses AuthorResponse[]
 }
 
+enum SubmissionFileKind {
+  MAIN
+  SIMILARITY_REPORT
+  FINAL_MANUSCRIPT
+}
+
 model SubmissionFile {
-  id           String     @id @default(cuid())
+  id           String             @id @default(cuid())
   submissionId String
-  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  version      Int        @default(1)
+  submission   Submission         @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  version      Int                @default(1)
+  kind         SubmissionFileKind @default(MAIN)
   originalName String
   storedPath   String
   mimeType     String
   sizeBytes    Int
-  uploadedAt   DateTime   @default(now())
+  uploadedAt   DateTime           @default(now())
 }
 
 model ReviewAssignment {

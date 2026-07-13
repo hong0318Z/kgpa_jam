@@ -37,7 +37,8 @@ export type AuditAction =
   | "USER_PROFILE_UPDATED"
   | "FEE_SETTINGS_UPDATED"
   | "SUBMISSION_DELETED"
-  | "REVIEWER_BANK_ACCOUNT_UPDATED";
+  | "REVIEWER_BANK_ACCOUNT_UPDATED"
+  | "FINAL_MANUSCRIPT_SUBMITTED";
 
 export async function logAudit(params: {
   actorId?: string | null;
@@ -93,6 +94,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   FEE_SETTINGS_UPDATED: "심사비/게재료 설정 변경",
   SUBMISSION_DELETED: "투고 삭제",
   REVIEWER_BANK_ACCOUNT_UPDATED: "심사비 지급 계좌 등록",
+  FINAL_MANUSCRIPT_SUBMITTED: "최종 원고 제출",
 };
 
 type TargetLookup = Map<string, Map<string, string>>;
@@ -233,7 +235,7 @@ export function formatAuditMetadata(
     }
     case "REVIEW_SUBMITTED": {
       const recommendation = typeof m.recommendation === "string" ? m.recommendation : "";
-      return `추천의견: ${RECOMMENDATION_LABELS[recommendation] ?? recommendation ?? "-"}${
+      return `심사의견: ${RECOMMENDATION_LABELS[recommendation] ?? recommendation ?? "-"}${
         m.score != null ? ` (점수: ${m.score})` : ""
       }`;
     }

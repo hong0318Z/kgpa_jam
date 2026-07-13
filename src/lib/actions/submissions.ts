@@ -26,7 +26,11 @@ export async function createSubmission(
     .filter(Boolean);
   const volumeId = String(formData.get("volumeId") ?? "");
   const pledgeAuthorNames = String(formData.get("pledgeAuthorNames") ?? "").trim();
+  const fields = formData.getAll("fields").map((f) => String(f)).filter(Boolean);
   const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
+  const similarityCheckFiles = formData
+    .getAll("similarityCheckFile")
+    .filter((f): f is File => f instanceof File && f.size > 0);
   const coauthorsRaw = String(formData.get("coauthors") ?? "[]");
   let coauthors: CoauthorInput[] = [];
   try {
@@ -60,6 +64,7 @@ export async function createSubmission(
       keywords,
       volumeId,
       pledgeAuthorNames,
+      fields,
       authorId: session.user.id,
     },
   });
@@ -71,10 +76,23 @@ export async function createSubmission(
       data: {
         submissionId: submission.id,
         version: 1,
+        kind: "MAIN",
         ...saved,
       },
     });
     savedFiles.push(saved);
+  }
+
+  for (const file of similarityCheckFiles) {
+    const saved = await saveUploadedFile(submission.id, file);
+    await prisma.submissionFile.create({
+      data: {
+        submissionId: submission.id,
+        version: 1,
+        kind: "SIMILARITY_REPORT",
+        ...saved,
+      },
+    });
   }
 
   await prisma.statusLog.create({
@@ -360,4 +378,66 @@ export async function deleteSubmission(submissionId: string): Promise<{ error?: 
 
   revalidatePath("/admin/submissions");
   return {};
+}
+
+export async function submitFinalManuscript(
+  submissionId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireSession();
+
+  const submission = await prisma.submission.findUniqueOrThrow({
+    where: { id: submissionId },
+  });
+  if (submission.authorId !== session.user.id && !ADMIN_ROLES.includes(session.user.role)) {
+    throw new ForbiddenError("본인의 투고만 제출할 수 있습니다.");
+  }
+  if (submission.status !== "ACCEPTED") {
+    return { error: "게재가 확정된 투고만 최종 원고를 제출할 수 있습니다." };
+  }
+
+  const files = formData
+    .getAll("file")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) {
+    return { error: "최종 원고 파일을 첨부해 주세요." };
+  }
+  for (const file of files) {
+    if (!ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
+      return { error: "PDF, HWP, DOCX 파일만 업로드할 수 있습니다." };
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      return { error: "파일 크기는 파일당 20MB를 초과할 수 없습니다." };
+    }
+  }
+
+  for (const file of files) {
+    const saved = await saveUploadedFile(submissionId, file);
+    await prisma.submissionFile.create({
+      data: { submissionId, version: 1, kind: "FINAL_MANUSCRIPT", ...saved },
+    });
+    await logAudit({
+      actorId: session.user.id,
+      action: "FILE_UPLOADED",
+      targetType: "Submission",
+      targetId: submissionId,
+      metadata: { originalName: saved.originalName, kind: "FINAL_MANUSCRIPT" },
+    });
+  }
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { finalManuscriptSubmittedAt: new Date() },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "FINAL_MANUSCRIPT_SUBMITTED",
+    targetType: "Submission",
+    targetId: submissionId,
+  });
+
+  revalidatePath(`/submissions/${submissionId}`);
+  return { success: "최종 원고가 제출되었습니다." };
 }
