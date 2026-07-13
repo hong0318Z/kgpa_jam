@@ -79,6 +79,19 @@ model User {
   siteSettingsUpdated SiteSettings[]   @relation("SiteSettingsUpdater")
   feeSettingsUpdated  FeeSettings[]    @relation("FeeSettingsUpdater")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdater")
+  passwordResetCodes    PasswordResetCode[] @relation("PasswordResetCodeUser")
+}
+
+model PasswordResetCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation("PasswordResetCodeUser", fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Volume {
@@ -88,6 +101,10 @@ model Volume {
   callEndDate        DateTime // 공식 투고 모집 종료일
   plannedPublishDate DateTime // 발간예정일
   status             VolumeStatus @default(OPEN)
+  compiledFileStoredPath   String?
+  compiledFileOriginalName String?
+  compiledFileMimeType     String?
+  compiledFileSizeBytes    Int?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 

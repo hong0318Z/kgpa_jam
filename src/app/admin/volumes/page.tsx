@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { updateVolumeStatus } from "@/lib/actions/volumes";
 import { formatDate } from "@/lib/date";
+import { CompiledVolumeUploadForm } from "./compiled-volume-upload-form";
 
 export default async function AdminVolumesPage() {
   await requireRole(ADMIN_ROLES);
@@ -26,6 +27,7 @@ export default async function AdminVolumesPage() {
             <th className="px-4 py-2">모집기간</th>
             <th className="px-4 py-2">발간예정일</th>
             <th className="px-4 py-2">상태</th>
+            <th className="px-4 py-2">학술지 합본 파일</th>
           </tr>
         </thead>
         <tbody>
@@ -63,6 +65,17 @@ export default async function AdminVolumesPage() {
                     변경
                   </button>
                 </form>
+              </td>
+              <td className="px-4 py-2">
+                {v.compiledFileOriginalName && (
+                  <a
+                    href={`/api/volumes/${v.id}/compiled`}
+                    className="mb-1 block text-xs text-gray-700 underline"
+                  >
+                    {v.compiledFileOriginalName}
+                  </a>
+                )}
+                <CompiledVolumeUploadForm volumeId={v.id} />
               </td>
             </tr>
           ))}

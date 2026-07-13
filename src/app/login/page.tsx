@@ -29,6 +29,9 @@ export default function LoginPage() {
           />
         </div>
         <PasswordInput name="password" required label="비밀번호" />
+        <Link href="/forgot-password" className="-mt-2 self-end text-xs text-gray-500 underline">
+          비밀번호를 잊으셨나요?
+        </Link>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
           type="submit"

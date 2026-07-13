@@ -5,6 +5,7 @@ import { MobileNav } from "@/components/mobile-nav";
 import { stopImpersonation } from "@/lib/actions/impersonation";
 
 const NAV_LINKS = [
+  { href: "/journal", label: "학술지" },
   { href: "/notices", label: "공지사항" },
   { href: "/resources", label: "자료실(투고양식)" },
   { href: "/policies/research-ethics", label: "연구윤리규정" },

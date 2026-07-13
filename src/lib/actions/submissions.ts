@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
 import type { CoauthorInput } from "@/lib/actions/submission-authors";
+import { sendReviewerAssignedEmail, sendDecisionEmail } from "@/lib/notifications";
 
 const ALLOWED_EXT = [".pdf", ".hwp", ".docx"];
 
@@ -183,8 +184,17 @@ export async function assignReviewer(submissionId: string, reviewerId: string, d
     ? new Date(dueDate)
     : new Date(Date.now() + defaultPeriodDays * 24 * 60 * 60 * 1000);
 
-  await prisma.reviewAssignment.create({
+  const assignment = await prisma.reviewAssignment.create({
     data: { submissionId, reviewerId, round: submission.round, dueDate: effectiveDueDate },
+    include: { reviewer: true },
+  });
+
+  await sendReviewerAssignedEmail({
+    reviewer: { email: assignment.reviewer.email, name: assignment.reviewer.name },
+    submissionTitle: submission.title,
+    caseNumber: submission.caseNumber,
+    dueDate: effectiveDueDate,
+    assignmentId: assignment.id,
   });
 
   if (submission.status === "SUBMITTED") {
@@ -276,6 +286,7 @@ export async function makeDecision(
 
   const submission = await prisma.submission.findUniqueOrThrow({
     where: { id: submissionId },
+    include: { author: true },
   });
 
   await prisma.decision.create({
@@ -297,6 +308,14 @@ export async function makeDecision(
     targetType: "Submission",
     targetId: submissionId,
     metadata: { outcome, note },
+  });
+
+  await sendDecisionEmail({
+    author: { email: submission.author.email, name: submission.author.name },
+    submissionId,
+    submissionTitle: submission.title,
+    outcome,
+    note: note || null,
   });
 
   revalidatePath(`/submissions/${submissionId}`);
@@ -324,6 +343,44 @@ export async function deleteSubmission(submissionId: string): Promise<{ error?: 
   });
 
   revalidatePath("/admin/submissions");
+  return {};
+}
+
+const WITHDRAWABLE_STATUSES = ["SUBMITTED", "UNDER_REVIEW", "REVISION_REQUESTED"];
+
+export async function withdrawSubmission(submissionId: string): Promise<{ error?: string }> {
+  const session = await requireSession();
+
+  const submission = await prisma.submission.findUnique({ where: { id: submissionId } });
+  if (!submission) {
+    return { error: "존재하지 않는 투고입니다." };
+  }
+  if (submission.authorId !== session.user.id) {
+    return { error: "본인의 투고만 취소할 수 있습니다." };
+  }
+  if (!WITHDRAWABLE_STATUSES.includes(submission.status)) {
+    return { error: "현재 상태에서는 투고를 취소할 수 없습니다." };
+  }
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { status: "WITHDRAWN" },
+  });
+
+  await prisma.statusLog.create({
+    data: { submissionId, fromStatus: submission.status, toStatus: "WITHDRAWN", note: "저자 투고 취소" },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_WITHDRAWN",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { title: submission.title },
+  });
+
+  revalidatePath("/submissions");
+  revalidatePath(`/submissions/${submissionId}`);
   return {};
 }
 

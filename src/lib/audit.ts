@@ -41,6 +41,7 @@ export type AuditAction =
   | "FINAL_MANUSCRIPT_SUBMITTED"
   | "FINAL_MANUSCRIPT_APPROVED"
   | "FINAL_MANUSCRIPT_REJECTED"
+  | "SUBMISSION_WITHDRAWN"
   | "EMAIL_TEMPLATE_UPDATED";
 
 export async function logAudit(params: {
@@ -100,6 +101,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   FINAL_MANUSCRIPT_SUBMITTED: "최종 원고 제출",
   FINAL_MANUSCRIPT_APPROVED: "최종 원고 승인",
   FINAL_MANUSCRIPT_REJECTED: "최종 원고 반려",
+  SUBMISSION_WITHDRAWN: "투고 취소",
   EMAIL_TEMPLATE_UPDATED: "메일 문구 수정",
 };
 

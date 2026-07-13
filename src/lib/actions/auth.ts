@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
+import { sendWelcomeEmailTo } from "@/lib/notifications";
 
 export type ActionResult = { error?: string; success?: string };
 
@@ -75,6 +76,8 @@ export async function registerUser(
     targetId: user.id,
     metadata: { email, name, affiliation },
   });
+
+  await sendWelcomeEmailTo({ email: user.email, name: user.name });
 
   try {
     await signIn("credentials", { email, password, redirectTo: "/" });

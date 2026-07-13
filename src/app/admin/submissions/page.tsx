@@ -7,13 +7,21 @@ import { DeleteSubmissionButton } from "./delete-submission-button";
 export default async function AdminSubmissionsPage() {
   const session = await requireRole(ADMIN_ROLES);
   const canDelete = session.user.role === "ADMIN" || session.user.role === "CHIEF_EDITOR";
-  const submissions = await prisma.submission.findMany({
+  const submissionsRaw = await prisma.submission.findMany({
     include: {
       author: true,
       volume: true,
       assignments: { select: { round: true, status: true } },
     },
     orderBy: { createdAt: "desc" },
+  });
+
+  // 등록일 최신순을 기본으로 하되, 아직 심사위원 배정이 안 된 건을 상단에 우선 노출한다.
+  const submissions = [...submissionsRaw].sort((a, b) => {
+    const aNeeds = a.assignments.filter((x) => x.round === a.round).length === 0 ? 1 : 0;
+    const bNeeds = b.assignments.filter((x) => x.round === b.round).length === 0 ? 1 : 0;
+    if (aNeeds !== bNeeds) return bNeeds - aNeeds;
+    return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
   return (

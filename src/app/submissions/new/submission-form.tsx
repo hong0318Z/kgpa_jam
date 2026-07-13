@@ -61,10 +61,24 @@ export function SubmissionForm({
   const copyrightFiles = (existingFiles ?? []).filter((f) => f.kind === "COPYRIGHT_ASSIGNMENT");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    if (mode !== "resubmit") return;
     const fd = new FormData(e.currentTarget);
     const title = String(fd.get("title") ?? "").trim();
     const abstract = String(fd.get("abstract") ?? "").trim();
+    const mainFileSelected = fd.getAll("file").some((f) => f instanceof File && f.size > 0);
+    const hasExistingMainFile = mainFiles.length > 0;
+
+    const missing: string[] = [];
+    if (!title) missing.push("제목을 입력해 주세요.");
+    if (!abstract) missing.push("초록을 입력해 주세요.");
+    if (!mainFileSelected && !hasExistingMainFile) missing.push("논문 파일을 첨부해 주세요.");
+
+    if (missing.length > 0) {
+      e.preventDefault();
+      alert(missing.join("\n"));
+      return;
+    }
+
+    if (mode !== "resubmit") return;
     const keywords = String(fd.get("keywords") ?? "").trim();
     const fields = fd
       .getAll("fields")
@@ -93,7 +107,7 @@ export function SubmissionForm({
   };
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
       {mode === "create" && (
         <>
           <input type="hidden" name="pledgeAuthorNames" value={pledgeAuthorNames ?? ""} />
@@ -210,14 +224,14 @@ export function SubmissionForm({
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">저작권 위임서 (선택)</label>
         <p className="mb-2 text-xs text-gray-500">
-          게재 확정 전까지 제출하시면 되며, 지금 바로 첨부하셔도 됩니다.{" "}
-          <a
-            href="/templates/copyright-transfer-agreement.docx"
-            className="text-gray-700 underline"
-          >
-            양식 다운로드
-          </a>
+          게재 확정 전까지 제출하시면 되며, 지금 바로 첨부하셔도 됩니다.
         </p>
+        <a
+          href="/templates/copyright-transfer-agreement.docx"
+          className="mb-3 inline-flex items-center gap-2 rounded border-2 border-gray-900 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-900 hover:text-white"
+        >
+          저작권 이양 및 연구윤리 준수 동의서 양식 다운로드
+        </a>
         {mode === "resubmit" && (
           <ExistingFileList files={copyrightFiles} onDeleted={() => setFilesChanged(true)} />
         )}
