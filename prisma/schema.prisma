@@ -319,6 +319,19 @@ model EmailTemplate {
   updatedBy   User?    @relation("EmailTemplateUpdater", fields: [updatedById], references: [id])
 }
 
+model MailLog {
+  id          String   @id @default(cuid())
+  templateKey String?
+  to          String
+  subject     String
+  status      String // "SUCCESS" | "FAILED"
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([status])
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   actorId    String?

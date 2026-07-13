@@ -39,6 +39,7 @@ export async function requestPasswordResetCode(
         to: user.email,
         subject: fill(template.subject),
         html: wrapEmailShell(fill(template.bodyHtml)),
+        templateKey: "password_reset_code",
       });
     } catch (e) {
       console.error("[mail] password_reset_code send failed:", e);

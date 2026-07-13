@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { prisma } from "@/lib/prisma";
 
 function getTransport() {
   const host = process.env.SMTP_HOST;
@@ -25,19 +26,24 @@ export async function sendMail({
   to,
   subject,
   html,
+  templateKey,
 }: {
   to: string;
   subject: string;
   html: string;
+  templateKey?: string;
 }) {
-  const transport = getTransport();
   const fromAddress = process.env.SMTP_USER;
   try {
+    const transport = getTransport();
     await transport.sendMail({
       from: `"한국게임정책학회 인터랙티브미디어저널" <${fromAddress}>`,
       to,
       subject,
       html,
+    });
+    await prisma.mailLog.create({
+      data: { templateKey, to, subject, status: "SUCCESS" },
     });
   } catch (e) {
     const err = e as { message?: string; code?: string; command?: string; responseCode?: number };
@@ -46,6 +52,15 @@ export async function sendMail({
       code: err.code,
       command: err.command,
       responseCode: err.responseCode,
+    });
+    await prisma.mailLog.create({
+      data: {
+        templateKey,
+        to,
+        subject,
+        status: "FAILED",
+        error: err.message ?? String(e),
+      },
     });
     throw e;
   }

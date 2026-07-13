@@ -86,6 +86,7 @@ export async function sendWelcomeEmail(userId: string): Promise<{ error?: string
       to: target.email,
       subject: fill(template.subject),
       html: wrapEmailShell(fill(template.bodyHtml)),
+      templateKey: "welcome",
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "메일 발송에 실패했습니다." };

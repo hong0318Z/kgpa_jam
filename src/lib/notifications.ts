@@ -20,6 +20,7 @@ async function sendTemplateMail(
       to,
       subject: fillTemplate(template.subject, vars),
       html: wrapEmailShell(fillTemplate(template.bodyHtml, vars)),
+      templateKey: key,
     });
   } catch (e) {
     console.error(`[mail] ${key} send failed:`, e);

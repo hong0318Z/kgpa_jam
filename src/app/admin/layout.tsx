@@ -13,6 +13,7 @@ const ADMIN_LINKS = [
   { href: "/admin/policies/review-regulation/edit", label: "심사규정 수정" },
   { href: "/admin/fees", label: "심사비 관리" },
   { href: "/admin/mail", label: "메일 관리" },
+  { href: "/admin/mail/logs", label: "메일 발송 내역" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
