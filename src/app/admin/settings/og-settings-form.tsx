@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { updateOgSettings, resetOgSettings } from "@/lib/actions/settings";
 
 export function OgSettingsForm({
@@ -14,6 +14,11 @@ export function OgSettingsForm({
 }) {
   const [state, formAction, pending] = useActionState(updateOgSettings, {});
   const [resetPending, startReset] = useTransition();
+  const [cacheBust, setCacheBust] = useState(0);
+
+  useEffect(() => {
+    setCacheBust(Date.now());
+  }, [state, resetPending]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,7 +53,7 @@ export function OgSettingsForm({
           {hasImage && (
             <div className="mb-2">
               <img
-                src={`/api/site/og-image?t=${Date.now()}`}
+                src={cacheBust ? `/api/site/og-image?t=${cacheBust}` : "/api/site/og-image"}
                 alt="현재 미리보기 이미지"
                 className="h-32 w-auto rounded border border-gray-200 object-cover"
               />

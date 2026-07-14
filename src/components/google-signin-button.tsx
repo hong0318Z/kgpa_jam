@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { googleSignIn } from "@/lib/actions/google-auth";
+import { isInAppBrowser, getInAppBrowserName, isAndroid, openInExternalBrowser } from "@/lib/in-app-browser";
 
 export function GoogleIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -24,6 +28,42 @@ export function GoogleIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 export function GoogleSignInButton() {
+  const [inApp, setInApp] = useState(false);
+  const [android, setAndroid] = useState(false);
+  const [browserName, setBrowserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInApp(isInAppBrowser());
+    setAndroid(isAndroid());
+    setBrowserName(getInAppBrowserName());
+  }, []);
+
+  if (inApp) {
+    return (
+      <div className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+        <p className="mb-2 font-medium">
+          {browserName ? `${browserName} 인앱 브라우저` : "인앱 브라우저"}에서는 보안 정책상 Google
+          로그인을 사용할 수 없습니다.
+        </p>
+        <p className="mb-2">
+          {android
+            ? "아래 버튼을 눌러 외부 브라우저(Chrome)로 열어주세요."
+            : "우측 상단 메뉴(••• 또는 공유 아이콘)에서 'Safari로 열기(다른 브라우저로 열기)'를 선택해 주세요."}
+        </p>
+        <button
+          type="button"
+          onClick={() => openInExternalBrowser(window.location.href)}
+          className="w-full rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+        >
+          외부 브라우저로 열기
+        </button>
+        <p className="mt-2 text-[11px] text-amber-700">
+          이메일 · 비밀번호 로그인은 인앱 브라우저에서도 정상적으로 이용할 수 있습니다.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <form action={googleSignIn}>
       <button
