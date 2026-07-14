@@ -28,6 +28,7 @@ export type AuditAction =
   | "POLICY_UPDATED"
   | "AUTHOR_RESPONSE_SUBMITTED"
   | "MAINTENANCE_MODE_CHANGED"
+  | "SITE_OG_SETTINGS_UPDATED"
   | "WELCOME_EMAIL_SENT"
   | "USER_DELETED"
   | "FILE_DOWNLOADED"
@@ -90,6 +91,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   POLICY_UPDATED: "규정 개정",
   AUTHOR_RESPONSE_SUBMITTED: "저자 답변 제출",
   MAINTENANCE_MODE_CHANGED: "사이트 운영 상태 변경",
+  SITE_OG_SETTINGS_UPDATED: "링크 미리보기(OG) 설정 변경",
   WELCOME_EMAIL_SENT: "가입환영 메일 발송",
   USER_DELETED: "계정 삭제",
   FILE_DOWNLOADED: "논문 파일 다운로드",
