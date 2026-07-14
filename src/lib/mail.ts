@@ -1,6 +1,20 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 
+function htmlToPlainText(html: string) {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function getTransport() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT ?? "587");
@@ -41,6 +55,7 @@ export async function sendMail({
       to,
       subject,
       html,
+      text: htmlToPlainText(html),
     });
     await prisma.mailLog.create({
       data: { templateKey, to, subject, status: "SUCCESS" },

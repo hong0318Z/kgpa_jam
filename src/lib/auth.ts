@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { sendWelcomeEmailTo } from "@/lib/notifications";
 import type { Role } from "@/generated/prisma/client";
 
 declare module "next-auth" {
@@ -91,6 +92,7 @@ export const { handlers, signIn, signOut, auth, unstable_update: updateSession }
           targetId: dbUser.id,
           metadata: { email, name: dbUser.name, provider: "google" },
         });
+        await sendWelcomeEmailTo({ email: dbUser.email, name: dbUser.name });
       }
       if (!dbUser.isActive) return false;
 
