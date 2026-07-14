@@ -92,7 +92,7 @@ export const { handlers, signIn, signOut, auth, unstable_update: updateSession }
           targetId: dbUser.id,
           metadata: { email, name: dbUser.name, provider: "google" },
         });
-        await sendWelcomeEmailTo({ email: dbUser.email, name: dbUser.name });
+        void sendWelcomeEmailTo({ email: dbUser.email, name: dbUser.name });
       }
       if (!dbUser.isActive) return false;
 

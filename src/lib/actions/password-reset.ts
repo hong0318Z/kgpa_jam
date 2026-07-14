@@ -32,18 +32,21 @@ export async function requestPasswordResetCode(
       data: { userId: user.id, codeHash, expiresAt: new Date(Date.now() + CODE_TTL_MS) },
     });
 
-    try {
-      const template = await getEmailTemplate("password_reset_code");
-      const fill = (s: string) => s.replaceAll("{{code}}", code);
-      await sendMail({
-        to: user.email,
-        subject: fill(template.subject),
-        html: wrapEmailShell(fill(template.bodyHtml)),
-        templateKey: "password_reset_code",
-      });
-    } catch (e) {
-      console.error("[mail] password_reset_code send failed:", e);
-    }
+    // 메일 발송은 응답을 지연시키지 않도록 완료를 기다리지 않는다.
+    void (async () => {
+      try {
+        const template = await getEmailTemplate("password_reset_code");
+        const fill = (s: string) => s.replaceAll("{{code}}", code);
+        await sendMail({
+          to: user.email,
+          subject: fill(template.subject),
+          html: wrapEmailShell(fill(template.bodyHtml)),
+          templateKey: "password_reset_code",
+        });
+      } catch (e) {
+        console.error("[mail] password_reset_code send failed:", e);
+      }
+    })();
   }
 
   // 이메일 존재 여부와 무관하게 동일한 안내 메시지를 반환한다 (계정 존재 여부 노출 방지).

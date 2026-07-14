@@ -77,7 +77,7 @@ export async function registerUser(
     metadata: { email, name, affiliation },
   });
 
-  await sendWelcomeEmailTo({ email: user.email, name: user.name });
+  void sendWelcomeEmailTo({ email: user.email, name: user.name });
 
   try {
     await signIn("credentials", { email, password, redirectTo: "/" });

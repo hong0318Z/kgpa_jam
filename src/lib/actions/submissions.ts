@@ -189,7 +189,9 @@ export async function assignReviewer(submissionId: string, reviewerId: string, d
     include: { reviewer: true },
   });
 
-  await sendReviewerAssignedEmail({
+  // 메일 발송(SMTP 왕복)은 화면 응답을 지연시키지 않도록 완료를 기다리지 않는다.
+  // sendReviewerAssignedEmail 내부에서 실패를 잡아 MailLog에 남기므로 안전하다.
+  void sendReviewerAssignedEmail({
     reviewer: { email: assignment.reviewer.email, name: assignment.reviewer.name },
     submissionTitle: submission.title,
     caseNumber: submission.caseNumber,
@@ -310,7 +312,7 @@ export async function makeDecision(
     metadata: { outcome, note },
   });
 
-  await sendDecisionEmail({
+  void sendDecisionEmail({
     author: { email: submission.author.email, name: submission.author.name },
     submissionId,
     submissionTitle: submission.title,
