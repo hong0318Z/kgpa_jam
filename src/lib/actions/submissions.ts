@@ -329,12 +329,20 @@ export async function makeDecision(
 export async function deleteSubmission(submissionId: string): Promise<{ error?: string }> {
   const session = await requireRole(["ADMIN", "CHIEF_EDITOR"]);
 
-  const submission = await prisma.submission.findUnique({ where: { id: submissionId } });
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: { files: true },
+  });
   if (!submission) {
     return { error: "이미 삭제된 투고입니다." };
   }
 
   await prisma.submission.delete({ where: { id: submissionId } });
+
+  // DB 행은 cascade로 삭제되지만 업로드된 실제 파일은 별도로 지워야 한다.
+  for (const file of submission.files) {
+    await deleteStoredFile(file.storedPath);
+  }
 
   await logAudit({
     actorId: session.user.id,

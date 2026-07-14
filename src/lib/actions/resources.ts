@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
-import { saveUploadedFile } from "@/lib/storage";
+import { saveUploadedFile, deleteStoredFile } from "@/lib/storage";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
@@ -48,7 +48,8 @@ export async function createResource(
 export async function deleteResource(resourceId: string) {
   const session = await requireRole(ADMIN_ROLES);
 
-  await prisma.resource.delete({ where: { id: resourceId } });
+  const resource = await prisma.resource.delete({ where: { id: resourceId } });
+  await deleteStoredFile(resource.storedPath);
 
   await logAudit({
     actorId: session.user.id,
