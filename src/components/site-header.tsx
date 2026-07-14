@@ -2,14 +2,19 @@ import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
 import { MobileNav } from "@/components/mobile-nav";
+import { NavGroup } from "@/components/nav-group";
 import { stopImpersonation } from "@/lib/actions/impersonation";
 
 const NAV_LINKS = [
   { href: "/journal", label: "학술지" },
   { href: "/notices", label: "공지사항" },
+];
+
+const INFO_LINKS = [
   { href: "/resources", label: "자료실(투고양식)" },
   { href: "/policies/research-ethics", label: "연구윤리규정" },
   { href: "/policies/review-regulation", label: "심사규정" },
+  { href: "/policies/privacy-policy", label: "개인정보처리방침" },
 ];
 
 export async function SiteHeader() {
@@ -46,6 +51,7 @@ export async function SiteHeader() {
                 {l.label}
               </Link>
             ))}
+            <NavGroup label="이용안내" links={INFO_LINKS} />
             {session?.user ? (
               <>
                 <Link href="/submissions" className="text-gray-700 hover:underline">

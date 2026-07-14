@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,9 +34,7 @@ export default function RootLayout({
         <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
           {children}
         </main>
-        <footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
-          © 한국게임정책학회(KGPA) 「인터랙티브미디어저널」
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

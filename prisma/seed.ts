@@ -1,7 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
-import { REVIEW_REGULATION_MD, RESEARCH_ETHICS_MD } from "./policy-content";
+import { REVIEW_REGULATION_MD, RESEARCH_ETHICS_MD, PRIVACY_POLICY_MD } from "./policy-content";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -142,6 +142,18 @@ async function main() {
       title: "연구윤리규정",
       content: RESEARCH_ETHICS_MD,
       effectiveDate: new Date("2026-03-01"),
+      updatedById: admin.id,
+    },
+  });
+
+  await prisma.policy.upsert({
+    where: { slug: "privacy-policy" },
+    update: {},
+    create: {
+      slug: "privacy-policy",
+      title: "개인정보처리방침",
+      content: PRIVACY_POLICY_MD,
+      effectiveDate: new Date("2026-07-14"),
       updatedById: admin.id,
     },
   });

@@ -5,6 +5,7 @@ import { EditPolicyForm } from "./edit-policy-form";
 const POLICY_TITLES: Record<string, string> = {
   "research-ethics": "연구윤리규정",
   "review-regulation": "심사규정",
+  "privacy-policy": "개인정보처리방침",
 };
 
 export default async function EditPolicyPage({

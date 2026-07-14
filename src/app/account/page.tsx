@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { ChangePasswordForm } from "./change-password-form";
 import { ProfileForm } from "./profile-form";
+import { WithdrawAccountButton } from "./withdraw-account-button";
 
 export default async function AccountPage() {
   const session = await requireSession();
@@ -27,6 +28,14 @@ export default async function AccountPage() {
           Google 계정으로 로그인 중입니다. 비밀번호는 Google 계정에서 관리됩니다.
         </p>
       )}
+
+      <div className="my-6 h-px bg-gray-200" />
+
+      <h2 className="mb-2 text-sm font-semibold text-gray-900">회원 탈퇴</h2>
+      <p className="mb-3 text-xs text-gray-500">
+        탈퇴 시 계정 정보가 삭제되며 되돌릴 수 없습니다.
+      </p>
+      <WithdrawAccountButton />
     </div>
   );
 }

@@ -126,3 +126,54 @@ export async function changePassword(
   await signOut({ redirectTo: "/login" });
   return {};
 }
+
+export async function withdrawAccount(): Promise<{ error?: string }> {
+  const session = await requireSession();
+
+  const activeSubmissionCount = await prisma.submission.count({
+    where: {
+      authorId: session.user.id,
+      status: { in: ["SUBMITTED", "UNDER_REVIEW", "REVISION_REQUESTED"] },
+    },
+  });
+  if (activeSubmissionCount > 0) {
+    return { error: "진행 중인 투고가 있어 탈퇴할 수 없습니다. 투고를 취소하거나 완료한 후 다시 시도해 주세요." };
+  }
+
+  const activeReviewCount = await prisma.reviewAssignment.count({
+    where: {
+      reviewerId: session.user.id,
+      status: { in: ["ASSIGNED", "IN_PROGRESS"] },
+    },
+  });
+  if (activeReviewCount > 0) {
+    return { error: "진행 중인 심사가 있어 탈퇴할 수 없습니다. 심사를 완료한 후 다시 시도해 주세요." };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      email: `withdrawn-${session.user.id}@withdrawn.local`,
+      name: "탈퇴한 사용자",
+      passwordHash: null,
+      affiliation: null,
+      position: null,
+      phone: null,
+      isActive: false,
+      preferredFields: [],
+      reviewerBankName: null,
+      reviewerBankAccountNumber: null,
+      reviewerBankAccountHolder: null,
+    },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "USER_WITHDRAWN",
+    targetType: "User",
+    targetId: session.user.id,
+  });
+
+  await signOut({ redirectTo: "/" });
+  return {};
+}

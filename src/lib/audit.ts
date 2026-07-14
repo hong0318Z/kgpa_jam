@@ -15,6 +15,7 @@ export type AuditAction =
   | "VOLUME_CREATED"
   | "VOLUME_UPDATED"
   | "VOLUME_DELETED"
+  | "USER_WITHDRAWN"
   | "NOTICE_CREATED"
   | "NOTICE_UPDATED"
   | "NOTICE_DELETED"
@@ -76,6 +77,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   VOLUME_CREATED: "발행 호 등록",
   VOLUME_UPDATED: "발행 호 수정",
   VOLUME_DELETED: "발행 호 삭제",
+  USER_WITHDRAWN: "회원 탈퇴",
   NOTICE_CREATED: "공지사항 작성",
   NOTICE_UPDATED: "공지사항 수정",
   NOTICE_DELETED: "공지사항 삭제",
