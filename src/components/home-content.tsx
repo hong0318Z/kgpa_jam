@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { auth } from "@/lib/auth";
 import { getTodoItems } from "@/lib/todo";
+import { getOgSettings } from "@/lib/settings";
 
 export async function HomeContent() {
   const session = await auth();
@@ -15,6 +16,7 @@ export async function HomeContent() {
     orderBy: { callStartDate: "desc" },
   });
   const todoItems = session?.user ? await getTodoItems(session.user) : [];
+  const { ogImageStoredPath } = await getOgSettings();
 
   return (
     <div className="flex flex-col gap-10">
@@ -37,6 +39,14 @@ export async function HomeContent() {
             ))}
           </ul>
         </section>
+      )}
+      {ogImageStoredPath && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src="/api/site/og-image"
+          alt=""
+          className="w-full rounded-lg border border-gray-200 object-cover"
+        />
       )}
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">한국게임정책학회</p>
