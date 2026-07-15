@@ -136,6 +136,16 @@ export const { handlers, signIn, signOut, auth, unstable_update: updateSession }
             token.impersonatedByAdminId = undefined;
             token.impersonatedByAdminName = undefined;
           }
+        } else if (requestedId === token.id) {
+          // 본인 세션 새로고침 (예: 온보딩으로 프로필을 방금 완성한 경우)
+          const self = await prisma.user.findUnique({ where: { id: requestedId } });
+          if (self) {
+            token.name = self.name;
+            token.email = self.email;
+            token.role = self.role;
+            token.mustChangePassword = self.mustChangePassword;
+            token.profileComplete = self.profileComplete;
+          }
         } else {
           const isCurrentlyAdmin = token.role === "ADMIN";
           const isCurrentlyImpersonating = !!token.impersonatedByAdminId;

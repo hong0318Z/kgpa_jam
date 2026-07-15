@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/rbac";
-import { signOut } from "@/lib/auth";
+import { updateSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import type { ActionResult } from "@/lib/actions/auth";
 
 export async function completeProfile(
@@ -13,6 +14,7 @@ export async function completeProfile(
 
   const name = String(formData.get("name") ?? "").trim();
   const affiliation = String(formData.get("affiliation") ?? "").trim();
+  const position = String(formData.get("position") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const privacyConsent = formData.get("privacyConsent") === "on";
 
@@ -28,12 +30,13 @@ export async function completeProfile(
     data: {
       name,
       affiliation,
+      position: position || null,
       phone,
       profileComplete: true,
       privacyConsentAt: new Date(),
     },
   });
 
-  await signOut({ redirectTo: "/login" });
-  return {};
+  await updateSession({ user: { id: session.user.id } });
+  redirect("/");
 }
