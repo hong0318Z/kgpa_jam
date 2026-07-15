@@ -13,6 +13,9 @@ export function FinalManuscriptForm({ submissionId }: { submissionId: string }) 
         <label className="mb-1 block text-sm font-medium text-gray-700">
           최종 원고 파일 (저자명·소속 등 개인정보 포함, PDF/HWP/DOCX)
         </label>
+        <p className="mb-2 text-xs text-amber-700">
+          최종에는 모든 정보가 있는 원본 파일을 업로드 해주시길 바랍니다.
+        </p>
         <input
           type="file"
           name="file"

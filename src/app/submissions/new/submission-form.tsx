@@ -184,6 +184,9 @@ export function SubmissionForm({
         <label className="mb-1 block text-sm font-medium text-gray-700">
           논문 파일 (본문{mode === "resubmit" ? ", 수정본을 새로 첨부해 주세요" : ""})
         </label>
+        <p className="mb-2 text-xs text-amber-700">
+          심사시에는 개인정보를 모두 삭제한 논문을 투고해주시길 바랍니다.
+        </p>
         {mode === "resubmit" && (
           <ExistingFileList files={mainFiles} onDeleted={() => setFilesChanged(true)} />
         )}
