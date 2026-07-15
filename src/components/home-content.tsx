@@ -51,11 +51,8 @@ export async function HomeContent() {
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">한국게임정책학회</p>
         <h1 className="text-2xl font-bold text-gray-900">
-          「인터랙티브미디어저널」 투고 · 심사 관리 시스템
+          「인터랙티브미디어저널」 온라인 투고 시스템입니다.
         </h1>
-        <p className="mt-2 text-gray-600">
-          논문 투고, 심사위원 배정, 심사 평가 및 게재 결정을 한 곳에서 관리합니다.
-        </p>
         <div className="mt-4 flex gap-3">
           <Link
             href="/submissions/new"
