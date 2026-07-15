@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { ReviewForm } from "./review-form";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { RECOMMENDATION_LABELS } from "@/lib/labels";
+import { FileActions } from "@/components/file-actions";
 
 const DUE_SOON_THRESHOLD_DAYS = 5;
 
@@ -121,31 +122,28 @@ export default async function ReviewDetailPage({
         <p className="mt-3 text-xs font-medium text-gray-500">{assignment.round}차심사 파일</p>
         <div className="mt-1 flex flex-col gap-1">
           {latestMainFiles.map((f, i) => (
-            <a
+            <FileActions
               key={f.id}
-              href={`/api/files/${f.id}`}
-              className="inline-block text-sm text-gray-700 underline"
-            >
-              심사번호 {caseNumber} 논문{latestMainFiles.length > 1 ? ` (${i + 1})` : ""} 다운로드
-            </a>
+              fileId={f.id}
+              mimeType={f.mimeType}
+              label={`심사번호 ${caseNumber} 논문${latestMainFiles.length > 1 ? ` (${i + 1})` : ""}`}
+            />
           ))}
           {similarityFiles.map((f) => (
-            <a
+            <FileActions
               key={f.id}
-              href={`/api/files/${f.id}`}
-              className="inline-block text-sm text-gray-700 underline"
-            >
-              심사번호 {caseNumber} 논문유사도 검사내역 다운로드
-            </a>
+              fileId={f.id}
+              mimeType={f.mimeType}
+              label={`심사번호 ${caseNumber} 논문유사도 검사내역`}
+            />
           ))}
           {appendixFiles.map((f, i) => (
-            <a
+            <FileActions
               key={f.id}
-              href={`/api/files/${f.id}`}
-              className="inline-block text-sm text-gray-700 underline"
-            >
-              심사번호 {caseNumber} 부록 ({i + 1}) 다운로드
-            </a>
+              fileId={f.id}
+              mimeType={f.mimeType}
+              label={`심사번호 ${caseNumber} 부록 (${i + 1})`}
+            />
           ))}
           {latestMainFiles.length === 0 && similarityFiles.length === 0 && appendixFiles.length === 0 && (
             <p className="text-sm text-gray-500">이번 회차에 새로 등록된 파일이 없습니다.</p>
@@ -165,31 +163,28 @@ export default async function ReviewDetailPage({
                 </summary>
                 <div className="mt-3 flex flex-col gap-1">
                   {files.main.map((f, i) => (
-                    <a
+                    <FileActions
                       key={f.id}
-                      href={`/api/files/${f.id}`}
-                      className="inline-block text-sm text-gray-700 underline"
-                    >
-                      심사번호 {caseNumber} 논문{files.main.length > 1 ? ` (${i + 1})` : ""} ({round}차심사) 다운로드
-                    </a>
+                      fileId={f.id}
+                      mimeType={f.mimeType}
+                      label={`심사번호 ${caseNumber} 논문${files.main.length > 1 ? ` (${i + 1})` : ""} (${round}차심사)`}
+                    />
                   ))}
                   {files.similarity.map((f) => (
-                    <a
+                    <FileActions
                       key={f.id}
-                      href={`/api/files/${f.id}`}
-                      className="inline-block text-sm text-gray-700 underline"
-                    >
-                      심사번호 {caseNumber} 논문유사도 검사내역 ({round}차심사) 다운로드
-                    </a>
+                      fileId={f.id}
+                      mimeType={f.mimeType}
+                      label={`심사번호 ${caseNumber} 논문유사도 검사내역 (${round}차심사)`}
+                    />
                   ))}
                   {files.appendix.map((f, i) => (
-                    <a
+                    <FileActions
                       key={f.id}
-                      href={`/api/files/${f.id}`}
-                      className="inline-block text-sm text-gray-700 underline"
-                    >
-                      심사번호 {caseNumber} 부록 ({i + 1}) ({round}차심사) 다운로드
-                    </a>
+                      fileId={f.id}
+                      mimeType={f.mimeType}
+                      label={`심사번호 ${caseNumber} 부록 (${i + 1}) (${round}차심사)`}
+                    />
                   ))}
                   {files.main.length === 0 && files.similarity.length === 0 && files.appendix.length === 0 && (
                     <p className="text-sm text-gray-500">

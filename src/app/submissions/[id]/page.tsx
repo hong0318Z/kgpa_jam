@@ -5,6 +5,7 @@ import { CoauthorEditor } from "./coauthor-editor";
 import { ReviewResultsModal } from "./review-results-modal";
 import { FinalManuscriptForm } from "./final-manuscript-form";
 import { formatDate, formatDateTime } from "@/lib/date";
+import { FileActions } from "@/components/file-actions";
 import {
   SUBMISSION_STATUS_LABELS,
   REVIEW_STATUS_LABELS,
@@ -120,9 +121,7 @@ export default async function SubmissionDetailPage({
               .filter((f) => f.kind === "FINAL_MANUSCRIPT")
               .map((f) => (
                 <li key={f.id}>
-                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                    {f.originalName}
-                  </a>{" "}
+                  <FileActions fileId={f.id} mimeType={f.mimeType} label={f.originalName} />{" "}
                   <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
                 </li>
               ))}
@@ -221,9 +220,7 @@ export default async function SubmissionDetailPage({
             .filter((f) => f.kind === "MAIN")
             .map((f) => (
               <li key={f.id}>
-                <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                  v{f.version} - {f.originalName}
-                </a>{" "}
+                <FileActions fileId={f.id} mimeType={f.mimeType} label={`v${f.version} - ${f.originalName}`} />{" "}
                 <span className="text-xs text-gray-500">
                   ({formatDateTime(f.uploadedAt)})
                 </span>
@@ -241,9 +238,11 @@ export default async function SubmissionDetailPage({
               .sort((a, b) => a.version - b.version)
               .map((f, i) => (
                 <li key={f.id}>
-                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                    부록 ({i + 1}) - {f.originalName}
-                  </a>{" "}
+                  <FileActions
+                    fileId={f.id}
+                    mimeType={f.mimeType}
+                    label={`부록 (${i + 1}) - ${f.originalName}`}
+                  />{" "}
                   <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
                 </li>
               ))}
@@ -259,9 +258,7 @@ export default async function SubmissionDetailPage({
               .filter((f) => f.kind === "SIMILARITY_REPORT")
               .map((f) => (
                 <li key={f.id}>
-                  <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                    {f.originalName}
-                  </a>{" "}
+                  <FileActions fileId={f.id} mimeType={f.mimeType} label={f.originalName} />{" "}
                   <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
                 </li>
               ))}

@@ -31,6 +31,7 @@ type ExistingFile = {
   originalName: string;
   version: number;
   uploadedAt: Date;
+  mimeType: string;
 };
 
 export function SubmissionForm({

@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions/submissions";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
+import { FileActions } from "@/components/file-actions";
 
 const DUE_SOON_THRESHOLD_DAYS = 5;
 
@@ -142,9 +143,11 @@ export default async function AssignReviewerPage({
         <ul className="space-y-1 text-sm">
           {submission.files.map((f) => (
             <li key={f.id}>
-              <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                [{FILE_KIND_LABELS[f.kind] ?? f.kind}] v{f.version} - {f.originalName}
-              </a>{" "}
+              <FileActions
+                fileId={f.id}
+                mimeType={f.mimeType}
+                label={`[${FILE_KIND_LABELS[f.kind] ?? f.kind}] v${f.version} - ${f.originalName}`}
+              />{" "}
               <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
             </li>
           ))}

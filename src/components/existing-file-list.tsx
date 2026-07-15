@@ -3,12 +3,14 @@
 import { useState, useTransition } from "react";
 import { deleteSubmissionFile } from "@/lib/actions/submissions";
 import { formatDateTime } from "@/lib/date";
+import { FileActions } from "@/components/file-actions";
 
 type ExistingFile = {
   id: string;
   originalName: string;
   version: number;
   uploadedAt: Date;
+  mimeType: string;
 };
 
 export function ExistingFileList({
@@ -32,12 +34,9 @@ export function ExistingFileList({
           key={f.id}
           className="flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-sm"
         >
-          <a
-            href={`/api/files/${f.id}`}
-            className="flex-1 truncate text-gray-700 hover:underline"
-          >
-            v{f.version} - {f.originalName}
-          </a>
+          <span className="flex-1 truncate">
+            <FileActions fileId={f.id} mimeType={f.mimeType} label={`v${f.version} - ${f.originalName}`} />
+          </span>
           <span className="shrink-0 text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
           <button
             type="button"

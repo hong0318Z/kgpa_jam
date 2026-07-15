@@ -112,6 +112,7 @@ export default async function EditSubmissionPage({
             originalName: f.originalName,
             version: f.version,
             uploadedAt: f.uploadedAt,
+            mimeType: f.mimeType,
           }))}
         />
       </div>

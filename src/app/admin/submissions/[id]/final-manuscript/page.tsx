@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { approveFinalManuscript, rejectFinalManuscript } from "@/lib/actions/submissions";
 import { formatDateTime } from "@/lib/date";
+import { FileActions } from "@/components/file-actions";
 
 export default async function FinalManuscriptReviewPage({
   params,
@@ -49,9 +50,7 @@ export default async function FinalManuscriptReviewPage({
         <ul className="space-y-1 text-sm">
           {submission.files.map((f) => (
             <li key={f.id}>
-              <a href={`/api/files/${f.id}`} className="text-gray-700 hover:underline">
-                {f.originalName}
-              </a>{" "}
+              <FileActions fileId={f.id} mimeType={f.mimeType} label={f.originalName} />{" "}
               <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
             </li>
           ))}
