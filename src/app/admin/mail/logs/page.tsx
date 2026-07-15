@@ -56,13 +56,21 @@ export default async function MailLogsPage() {
                   <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                     성공
                   </span>
+                ) : log.status === "SKIPPED" ? (
+                  <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                    건너뜀(테스트 계정)
+                  </span>
                 ) : (
                   <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                     실패
                   </span>
                 )}
               </td>
-              <td className="max-w-xs truncate px-4 py-2 text-xs text-red-600">
+              <td
+                className={`max-w-xs truncate px-4 py-2 text-xs ${
+                  log.status === "FAILED" ? "text-red-600" : "text-gray-500"
+                }`}
+              >
                 {log.error ?? ""}
               </td>
             </tr>

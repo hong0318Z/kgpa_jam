@@ -46,6 +46,23 @@ export async function sendMail({
   html: string;
   templateKey?: string;
 }) {
+  const recipient = await prisma.user.findUnique({
+    where: { email: to },
+    select: { isTestAccount: true },
+  });
+  if (recipient?.isTestAccount) {
+    await prisma.mailLog.create({
+      data: {
+        templateKey,
+        to,
+        subject,
+        status: "SKIPPED",
+        error: "테스트 계정이라 실제 메일 발송을 건너뛰었습니다.",
+      },
+    });
+    return;
+  }
+
   const fromAddress = process.env.MAIL_FROM_ADDRESS ?? "paper@k-gpa.or.kr";
   try {
     const transport = getTransport();
