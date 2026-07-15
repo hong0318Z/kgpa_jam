@@ -36,6 +36,41 @@ function getTransport() {
   });
 }
 
+function getBrevoTransport() {
+  const host = process.env.BREVO_SMTP_HOST;
+  const port = Number(process.env.BREVO_SMTP_PORT ?? "587");
+  const user = process.env.BREVO_SMTP_USER;
+  const pass = process.env.BREVO_SMTP_PASSWORD;
+
+  if (!host || !user || !pass) return null;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+}
+
+function isGmailAddress(to: string) {
+  const domain = to.split("@")[1]?.toLowerCase();
+  return domain === "gmail.com" || domain === "googlemail.com";
+}
+
+async function deliver(
+  transport: nodemailer.Transporter,
+  { to, subject, html }: { to: string; subject: string; html: string },
+) {
+  const fromAddress = process.env.SMTP_USER;
+  await transport.sendMail({
+    from: `"한국게임정책학회 인터랙티브미디어저널" <${fromAddress}>`,
+    to,
+    subject,
+    html,
+    text: htmlToPlainText(html),
+  });
+}
+
 export async function sendMail({
   to,
   subject,
@@ -47,16 +82,41 @@ export async function sendMail({
   html: string;
   templateKey?: string;
 }) {
-  const fromAddress = process.env.SMTP_USER;
+  // Gmail 수신자는 배송률이 더 좋은 Brevo로 우선 발송하고,
+  // Brevo 발송이 실패하면 기존 SMTP로 재시도한다. 그 외 수신자는 기존 SMTP만 사용한다.
+  const brevoTransport = isGmailAddress(to) ? getBrevoTransport() : null;
+
+  if (brevoTransport) {
+    try {
+      await deliver(brevoTransport, { to, subject, html });
+      await prisma.mailLog.create({
+        data: { templateKey, to, subject, status: "SUCCESS" },
+      });
+      return;
+    } catch (e) {
+      const err = e as { message?: string; code?: string; command?: string; responseCode?: number };
+      console.error("[mail] Brevo sendMail failed, falling back to primary SMTP:", {
+        message: err.message,
+        code: err.code,
+        command: err.command,
+        responseCode: err.responseCode,
+      });
+      await prisma.mailLog.create({
+        data: {
+          templateKey,
+          to,
+          subject,
+          status: "FAILED",
+          error: `[Brevo 실패, 기존 SMTP로 재시도] ${err.message ?? String(e)}`,
+        },
+      });
+      // fall through to primary SMTP below
+    }
+  }
+
   try {
     const transport = getTransport();
-    await transport.sendMail({
-      from: `"한국게임정책학회 인터랙티브미디어저널" <${fromAddress}>`,
-      to,
-      subject,
-      html,
-      text: htmlToPlainText(html),
-    });
+    await deliver(transport, { to, subject, html });
     await prisma.mailLog.create({
       data: { templateKey, to, subject, status: "SUCCESS" },
     });
