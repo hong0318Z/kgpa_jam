@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
       // Server Action의 기본 1MB 제한을 훌쩍 넘겨서 "Body exceeded 1 MB limit" 에러가 났었다.
       bodySizeLimit: "100mb",
     },
+    // src/proxy.ts(전역 인증 가드)를 거치는 요청 본문도 기본 10MB로 제한되어 있어서,
+    // 위 serverActions 제한을 올려도 여기서 다시 "Unexpected end of form"으로 잘렸다.
+    proxyClientMaxBodySize: "100mb",
   },
 };
 
