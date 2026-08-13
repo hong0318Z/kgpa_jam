@@ -63,6 +63,7 @@ model User {
   reviewerBankName          String?
   reviewerBankAccountNumber String?
   reviewerBankAccountHolder String?
+  reviewerCareerNote        String?
   preferredFields           String[] @default([])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

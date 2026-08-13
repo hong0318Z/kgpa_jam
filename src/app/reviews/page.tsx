@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/date";
 import { REVIEW_STATUS_LABELS } from "@/lib/labels";
 import { BankAccountForm } from "./bank-account-form";
 import { PreferredFieldsForm } from "./preferred-fields-form";
+import { CareerNoteForm } from "./career-note-form";
 
 export default async function ReviewsPage() {
   const session = await requireRole(REVIEW_ROLES);
@@ -85,6 +86,14 @@ export default async function ReviewsPage() {
           bankAccountNumber={user.reviewerBankAccountNumber}
           bankAccountHolder={user.reviewerBankAccountHolder}
         />
+      </div>
+
+      <div className="mb-6 rounded border border-gray-200 bg-gray-50 p-4">
+        <h2 className="mb-2 text-sm font-semibold text-gray-900">이력 · 연구실적</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          자유롭게 작성해 두시면 언제든 다시 열어 수정 · 저장하실 수 있습니다.
+        </p>
+        <CareerNoteForm careerNote={user.reviewerCareerNote} />
       </div>
 
       <h2 className="mb-2 text-sm font-semibold text-gray-900">진행중인 심사</h2>

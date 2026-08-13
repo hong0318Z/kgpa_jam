@@ -81,6 +81,23 @@ export async function updateReviewerBankAccount(
   return { success: "심사비 지급 계좌가 저장되었습니다." };
 }
 
+export async function updateReviewerCareerNote(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireSession();
+
+  const note = String(formData.get("careerNote") ?? "").trim();
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { reviewerCareerNote: note || null },
+  });
+
+  revalidatePath("/reviews");
+  return { success: "저장되었습니다." };
+}
+
 export async function changePassword(
   _prev: ActionResult,
   formData: FormData,
@@ -164,6 +181,7 @@ export async function withdrawAccount(): Promise<{ error?: string }> {
       reviewerBankName: null,
       reviewerBankAccountNumber: null,
       reviewerBankAccountHolder: null,
+      reviewerCareerNote: null,
     },
   });
 
