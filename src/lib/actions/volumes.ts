@@ -63,6 +63,47 @@ export async function updateVolumeStatus(volumeId: string, status: VolumeStatus)
   revalidatePath("/admin/volumes");
 }
 
+export async function updateVolumeDates(
+  volumeId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const callStartDate = String(formData.get("callStartDate") ?? "");
+  const callEndDate = String(formData.get("callEndDate") ?? "");
+  const plannedPublishDate = String(formData.get("plannedPublishDate") ?? "");
+
+  if (!callStartDate || !callEndDate || !plannedPublishDate) {
+    return { error: "모집기간과 발간예정일을 모두 입력해 주세요." };
+  }
+  if (new Date(callStartDate) > new Date(callEndDate)) {
+    return { error: "모집 시작일이 종료일보다 늦을 수 없습니다." };
+  }
+
+  await prisma.volume.update({
+    where: { id: volumeId },
+    data: {
+      callStartDate: new Date(callStartDate),
+      callEndDate: new Date(callEndDate),
+      plannedPublishDate: new Date(plannedPublishDate),
+    },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "VOLUME_UPDATED",
+    targetType: "Volume",
+    targetId: volumeId,
+    metadata: { callStartDate, callEndDate, plannedPublishDate },
+  });
+
+  revalidatePath("/admin/volumes");
+  revalidatePath("/journal");
+  revalidatePath(`/journal/${volumeId}`);
+  return { success: "기간이 변경되었습니다." };
+}
+
 export async function uploadCompiledVolumeFile(
   volumeId: string,
   _prev: ActionResult,

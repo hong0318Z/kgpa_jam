@@ -2,9 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { updateVolumeStatus } from "@/lib/actions/volumes";
-import { formatDate } from "@/lib/date";
 import { CompiledVolumeUploadForm } from "./compiled-volume-upload-form";
 import { DeleteVolumeButton } from "./delete-volume-button";
+import { VolumeDatesForm } from "./volume-dates-form";
 
 export default async function AdminVolumesPage() {
   await requireRole(ADMIN_ROLES);
@@ -25,8 +25,7 @@ export default async function AdminVolumesPage() {
         <thead className="bg-gray-50 text-left text-gray-600">
           <tr>
             <th className="px-4 py-2">호</th>
-            <th className="px-4 py-2">모집기간</th>
-            <th className="px-4 py-2">발간예정일</th>
+            <th className="px-4 py-2">모집기간 · 발간예정일</th>
             <th className="px-4 py-2">상태</th>
             <th className="px-4 py-2">학술지 합본 파일</th>
             <th className="px-4 py-2"></th>
@@ -37,11 +36,12 @@ export default async function AdminVolumesPage() {
             <tr key={v.id} className="border-t border-gray-200">
               <td className="px-4 py-2 font-medium text-gray-900">{v.label}</td>
               <td className="px-4 py-2 text-gray-600">
-                {formatDate(v.callStartDate)} ~{" "}
-                {formatDate(v.callEndDate)}
-              </td>
-              <td className="px-4 py-2 text-gray-600">
-                {formatDate(v.plannedPublishDate)}
+                <VolumeDatesForm
+                  volumeId={v.id}
+                  callStartDate={v.callStartDate}
+                  callEndDate={v.callEndDate}
+                  plannedPublishDate={v.plannedPublishDate}
+                />
               </td>
               <td className="px-4 py-2">
                 <form
