@@ -25,7 +25,7 @@ export async function SiteHeader() {
       {session?.user?.impersonatedByAdminId && (
         <div className="flex items-center justify-center gap-3 bg-amber-100 px-4 py-1.5 text-xs font-medium text-amber-900">
           <span>
-            테스트 계정 &quot;{session.user.name}&quot;({session.user.impersonatedByAdminName}
+            &quot;{session.user.name}&quot; 계정({session.user.impersonatedByAdminName}
             님이 전환함)으로 보고 있습니다.
           </span>
           <form action={stopImpersonation}>

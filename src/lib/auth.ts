@@ -151,7 +151,8 @@ export const { handlers, signIn, signOut, auth, unstable_update: updateSession }
           const isCurrentlyImpersonating = !!token.impersonatedByAdminId;
           const target = await prisma.user.findUnique({ where: { id: requestedId } });
 
-          if (target?.isTestAccount && (isCurrentlyAdmin || isCurrentlyImpersonating)) {
+          const targetIsImpersonatable = target?.isTestAccount || target?.role === "REVIEWER";
+          if (targetIsImpersonatable && (isCurrentlyAdmin || isCurrentlyImpersonating)) {
             if (!token.impersonatedByAdminId) {
               token.impersonatedByAdminId = token.id as string;
               token.impersonatedByAdminName = token.name as string;

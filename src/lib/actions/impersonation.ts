@@ -6,15 +6,15 @@ import { requireRole, requireSession } from "@/lib/rbac";
 import { updateSession, STOP_IMPERSONATION_MARKER } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export async function startImpersonation(testUserId: string) {
+export async function startImpersonation(targetUserId: string) {
   const session = await requireRole(["ADMIN"]);
 
-  const target = await prisma.user.findUnique({ where: { id: testUserId } });
-  if (!target || !target.isTestAccount) {
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!target || !(target.isTestAccount || target.role === "REVIEWER")) {
     redirect("/forbidden");
   }
 
-  await updateSession({ user: { id: testUserId } });
+  await updateSession({ user: { id: targetUserId } });
   await logAudit({
     actorId: session.user.id,
     action: "IMPERSONATION_STARTED",

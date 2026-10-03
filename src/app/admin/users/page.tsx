@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { UsersTable } from "./users-table";
-import { TestAccountSwitcher } from "./test-account-switcher";
+import { AccountSwitcher } from "./account-switcher";
 import { ROLE_LABELS } from "@/lib/labels";
 
 export default async function AdminUsersPage({
@@ -18,6 +18,13 @@ export default async function AdminUsersPage({
     ? await prisma.user.findMany({
         where: { isTestAccount: true },
         orderBy: { createdAt: "asc" },
+      })
+    : [];
+
+  const reviewerAccounts = isAdmin
+    ? await prisma.user.findMany({
+        where: { role: "REVIEWER", isTestAccount: false, isActive: true },
+        orderBy: { name: "asc" },
       })
     : [];
 
@@ -62,9 +69,30 @@ export default async function AdminUsersPage({
           <ul className="flex flex-wrap gap-2">
             {testAccounts.map((t) => (
               <li key={t.id}>
-                <TestAccountSwitcher
+                <AccountSwitcher
                   userId={t.id}
                   label={`${t.name} (${ROLE_LABELS[t.role] ?? t.role})`}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {isAdmin && reviewerAccounts.length > 0 && (
+        <div className="mb-6 rounded border border-gray-200 bg-gray-50 p-4">
+          <h2 className="mb-2 text-sm font-semibold text-gray-900">심사위원 계정으로 전환</h2>
+          <p className="mb-3 text-xs text-gray-500">
+            심사위원이 시스템 사용이 익숙하지 않거나 급히 대리 처리가 필요할 때, 해당 심사위원
+            계정으로 전환해 화면을 직접 조작할 수 있습니다. 실제 계정이므로 신중하게 사용해
+            주세요. 전환/복귀 이력은 감사 로그에 남습니다.
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {reviewerAccounts.map((r) => (
+              <li key={r.id}>
+                <AccountSwitcher
+                  userId={r.id}
+                  label={`${r.name} (${r.affiliation ?? "소속 미입력"})`}
+                  confirmMessage={`실제 계정 "${r.name}"(으)로 전환합니다. 이 계정으로 수행하는 모든 작업은 해당 심사위원 본인이 한 것처럼 기록됩니다. 계속하시겠습니까?`}
                 />
               </li>
             ))}
