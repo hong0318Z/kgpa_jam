@@ -16,7 +16,11 @@ export default async function ConferencePage() {
   });
   const posters = await prisma.submission.findMany({
     where: { status: "ACCEPTED", volume: { type: "CONFERENCE" } },
-    include: { volume: true, coauthors: { orderBy: { order: "asc" } } },
+    include: {
+      volume: true,
+      coauthors: { orderBy: { order: "asc" } },
+      files: { where: { kind: "MAIN" }, orderBy: { version: "asc" }, take: 1 },
+    },
     orderBy: [{ award: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
   });
 
@@ -54,7 +58,7 @@ export default async function ConferencePage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">포스터 논문</h2>
+        <h2 className="mb-3 text-lg font-semibold text-gray-900">게재된 포스터 · 논문</h2>
         <ul className="divide-y divide-gray-200 rounded border border-gray-200 bg-white">
           {posters.map((p) => (
             <li key={p.id} className="px-4 py-3">
@@ -68,11 +72,37 @@ export default async function ConferencePage() {
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 {p.coauthors.length > 0
-                  ? p.coauthors.map((a) => a.name).join(", ")
+                  ? p.coauthors
+                      .map((a) => (a.affiliation ? `${a.name}(${a.affiliation})` : a.name))
+                      .join(", ")
                   : (p.pledgeAuthorNames ?? "")}{" "}
                 · {p.volume.label}
               </p>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{p.abstract}</p>
+              {p.conferenceFormat === "POSTER" && p.files[0] ? (
+                p.files[0].mimeType.startsWith("image/") ? (
+                  <a href={`/api/conference/posters/${p.files[0].id}`} target="_blank" rel="noopener noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/conference/posters/${p.files[0].id}`}
+                      alt={p.title}
+                      className="mt-3 max-h-[600px] w-auto max-w-full rounded border border-gray-200"
+                    />
+                  </a>
+                ) : (
+                  <a
+                    href={`/api/conference/posters/${p.files[0].id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-sm text-blue-600 underline"
+                  >
+                    포스터 보기 (PDF)
+                  </a>
+                )
+              ) : (
+                p.abstract && (
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{p.abstract}</p>
+                )
+              )}
             </li>
           ))}
           {posters.length === 0 && (

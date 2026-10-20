@@ -141,7 +141,10 @@ export default async function AssignReviewerPage({
 
       {submission.volume.type === "CONFERENCE" && (
         <div className="rounded border border-indigo-200 bg-indigo-50 p-6">
-          <h2 className="mb-1 text-sm font-semibold text-gray-900">학술대회 투고</h2>
+          <h2 className="mb-1 text-sm font-semibold text-gray-900">
+            학술대회 투고 ·{" "}
+            {submission.conferenceFormat === "POSTER" ? "포스터" : "논문(프로시딩)"}
+          </h2>
           <p className="mb-3 text-xs text-gray-600">
             심사위원 배정 없이{" "}
             <Link href={`/admin/submissions/${submission.id}/decide`} className="underline">

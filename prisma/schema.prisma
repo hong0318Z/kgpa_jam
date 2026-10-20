@@ -22,6 +22,11 @@ enum VolumeType {
   CONFERENCE
 }
 
+enum ConferenceFormat {
+  PROCEEDINGS
+  POSTER
+}
+
 enum VolumeStatus {
   OPEN
   CLOSED
@@ -127,6 +132,7 @@ model Submission {
   pledgeAuthorNames  String?
   status             SubmissionStatus @default(SUBMITTED)
   award              String?
+  conferenceFormat   ConferenceFormat?
   round              Int              @default(1)
   isUrgent           Boolean          @default(false)
   fields             String[]         @default([])

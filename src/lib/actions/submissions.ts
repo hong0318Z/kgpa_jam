@@ -67,6 +67,11 @@ export async function createSubmission(
     }
   }
 
+  const targetVolume = await prisma.volume.findUnique({
+    where: { id: volumeId },
+    select: { type: true },
+  });
+
   const submission = await prisma.submission.create({
     data: {
       title,
@@ -76,6 +81,7 @@ export async function createSubmission(
       pledgeAuthorNames,
       fields,
       authorId: session.user.id,
+      conferenceFormat: targetVolume?.type === "CONFERENCE" ? "PROCEEDINGS" : null,
     },
   });
 

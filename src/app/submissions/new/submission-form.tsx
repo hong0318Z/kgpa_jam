@@ -41,6 +41,7 @@ export function SubmissionForm({
   submissionId,
   initial,
   existingFiles,
+  hideCopyrightUpload = false,
 }: {
   volumes?: Volume[];
   pledgeAuthorNames?: string;
@@ -48,6 +49,7 @@ export function SubmissionForm({
   submissionId?: string;
   initial?: InitialValues;
   existingFiles?: ExistingFile[];
+  hideCopyrightUpload?: boolean;
 }) {
   const action =
     mode === "resubmit" && submissionId
@@ -225,6 +227,7 @@ export function SubmissionForm({
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
         />
       </div>
+      {!hideCopyrightUpload && (
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">저작권 위임서 (선택)</label>
         <p className="mb-2 text-xs text-gray-500">
@@ -245,6 +248,7 @@ export function SubmissionForm({
           hint="PDF, HWP, DOCX 파일만 업로드할 수 있습니다. (최대 20MB)"
         />
       </div>
+      )}
       {mode === "resubmit" && (
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
