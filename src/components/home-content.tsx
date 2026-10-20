@@ -15,6 +15,10 @@ export async function HomeContent() {
     where: { status: "OPEN", type: "JOURNAL" },
     orderBy: { callStartDate: "desc" },
   });
+  const conferenceVolumes = await prisma.volume.findMany({
+    where: { status: "OPEN", type: "CONFERENCE" },
+    orderBy: { callStartDate: "desc" },
+  });
   const todoItems = session?.user ? await getTodoItems(session.user) : [];
   const { ogImageStoredPath } = await getOgSettings();
   const conference = await getConferenceSettings();
@@ -49,6 +53,41 @@ export async function HomeContent() {
           className="w-full rounded-lg border border-gray-200 object-cover"
         />
       )}
+      {conference.enabled && (
+        <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-6">
+          <h2 className="text-lg font-bold text-indigo-900">학술대회</h2>
+          {conferenceVolumes.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-sm text-indigo-900">
+              {conferenceVolumes.map((v) => (
+                <li key={v.id}>
+                  <span className="font-medium">{v.label}</span>
+                  <span className="ml-2 text-indigo-700">
+                    모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-indigo-700">현재 투고를 받고 있지 않습니다.</p>
+          )}
+          <div className="mt-4 flex gap-3">
+            {conferenceVolumes.length > 0 && (
+              <Link
+                href="/conference/new"
+                className="rounded bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800"
+              >
+                학술대회 투고하기
+              </Link>
+            )}
+            <Link
+              href="/conference"
+              className="rounded border border-indigo-300 bg-white px-4 py-2 text-sm font-medium text-indigo-800 hover:bg-indigo-100"
+            >
+              안내 · 포스터 논문 보기
+            </Link>
+          </div>
+        </section>
+      )}
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <p className="text-sm text-gray-500">한국게임정책학회</p>
         <h1 className="text-2xl font-bold text-gray-900">
@@ -69,15 +108,6 @@ export async function HomeContent() {
           </Link>
         </div>
       </section>
-
-      {conference.enabled && (
-        <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-          <p className="text-sm font-semibold text-indigo-900">학술대회 안내</p>
-          <Link href="/conference" className="mt-1 inline-block text-sm text-indigo-800 underline">
-            학술대회 페이지로 이동 · 투고하기
-          </Link>
-        </section>
-      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-gray-900">현재 투고 모집중인 호</h2>
