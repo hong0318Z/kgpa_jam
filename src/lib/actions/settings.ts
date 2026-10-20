@@ -27,6 +27,42 @@ export async function setMaintenanceMode(maintenanceMode: boolean) {
   revalidatePath("/admin/settings");
 }
 
+export async function updateConferenceSettings(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(["ADMIN"]);
+
+  const conferenceEnabled = formData.get("conferenceEnabled") === "on";
+  const conferenceInfoText = String(formData.get("conferenceInfoText") ?? "").trim();
+
+  await prisma.siteSettings.upsert({
+    where: { id: SETTINGS_ID },
+    create: {
+      id: SETTINGS_ID,
+      conferenceEnabled,
+      conferenceInfoText: conferenceInfoText || null,
+      updatedById: session.user.id,
+    },
+    update: {
+      conferenceEnabled,
+      conferenceInfoText: conferenceInfoText || null,
+      updatedById: session.user.id,
+    },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SITE_CONFERENCE_SETTINGS_UPDATED",
+    metadata: { conferenceEnabled },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/conference");
+  revalidatePath("/admin/settings");
+  return { success: "학술대회 설정이 저장되었습니다." };
+}
+
 export async function updateOgSettings(
   _prev: ActionResult,
   formData: FormData,

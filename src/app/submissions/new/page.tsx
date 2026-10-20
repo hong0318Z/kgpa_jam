@@ -6,7 +6,7 @@ import { PledgeGate } from "@/components/pledge-gate";
 export default async function NewSubmissionPage() {
   await requireSession();
   const volumes = await prisma.volume.findMany({
-    where: { status: "OPEN" },
+    where: { status: "OPEN", type: "JOURNAL" },
     orderBy: { callStartDate: "desc" },
   });
 

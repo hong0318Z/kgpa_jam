@@ -17,6 +17,11 @@ enum Role {
   ADMIN
 }
 
+enum VolumeType {
+  JOURNAL
+  CONFERENCE
+}
+
 enum VolumeStatus {
   OPEN
   CLOSED
@@ -102,6 +107,7 @@ model Volume {
   callEndDate        DateTime // 공식 투고 모집 종료일
   plannedPublishDate DateTime // 발간예정일
   status             VolumeStatus @default(OPEN)
+  type               VolumeType   @default(JOURNAL)
   compiledFileStoredPath   String?
   compiledFileOriginalName String?
   compiledFileMimeType     String?
@@ -120,6 +126,7 @@ model Submission {
   keywords           String[]
   pledgeAuthorNames  String?
   status             SubmissionStatus @default(SUBMITTED)
+  award              String?
   round              Int              @default(1)
   isUrgent           Boolean          @default(false)
   fields             String[]         @default([])
@@ -291,6 +298,8 @@ model Policy {
 model SiteSettings {
   id              String   @id @default("singleton")
   maintenanceMode Boolean  @default(true)
+  conferenceEnabled  Boolean  @default(false)
+  conferenceInfoText String?
   ogTitle              String?
   ogDescription        String?
   ogImageStoredPath    String?

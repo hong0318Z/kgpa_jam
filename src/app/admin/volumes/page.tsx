@@ -34,7 +34,14 @@ export default async function AdminVolumesPage() {
         <tbody>
           {volumes.map((v) => (
             <tr key={v.id} className="border-t border-gray-200">
-              <td className="px-4 py-2 font-medium text-gray-900">{v.label}</td>
+              <td className="px-4 py-2 font-medium text-gray-900">
+                {v.label}
+                {v.type === "CONFERENCE" && (
+                  <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 text-xs font-medium text-indigo-700">
+                    학술대회
+                  </span>
+                )}
+              </td>
               <td className="px-4 py-2 text-gray-600">
                 <VolumeDatesForm
                   volumeId={v.id}

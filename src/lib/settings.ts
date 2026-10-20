@@ -17,4 +17,12 @@ export async function getOgSettings() {
   };
 }
 
+export async function getConferenceSettings() {
+  const settings = await prisma.siteSettings.findUnique({ where: { id: SETTINGS_ID } });
+  return {
+    enabled: settings?.conferenceEnabled ?? false,
+    infoText: settings?.conferenceInfoText ?? "",
+  };
+}
+
 export { SETTINGS_ID };

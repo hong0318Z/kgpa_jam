@@ -1,12 +1,14 @@
 import { requireRole } from "@/lib/rbac";
-import { getMaintenanceMode, getOgSettings } from "@/lib/settings";
+import { getMaintenanceMode, getOgSettings, getConferenceSettings } from "@/lib/settings";
 import { MaintenanceToggle } from "./maintenance-toggle";
 import { OgSettingsForm } from "./og-settings-form";
+import { ConferenceSettingsForm } from "./conference-settings-form";
 
 export default async function AdminSettingsPage() {
   await requireRole(["ADMIN"]);
   const maintenanceMode = await getMaintenanceMode();
   const og = await getOgSettings();
+  const conference = await getConferenceSettings();
 
   return (
     <div className="w-full max-w-2xl">
@@ -19,6 +21,15 @@ export default async function AdminSettingsPage() {
           경로에서 항상 확인할 수 있습니다.
         </p>
         <MaintenanceToggle maintenanceMode={maintenanceMode} />
+      </div>
+
+      <div className="mb-6 rounded border border-gray-200 bg-white p-6">
+        <h2 className="mb-1 text-sm font-semibold text-gray-900">학술대회 페이지</h2>
+        <p className="mb-4 text-sm text-gray-500">
+          켜 두면 메인과 상단 메뉴에 &quot;학술대회&quot;가 노출됩니다. 투고를 받으려면 발행 호
+          관리에서 구분을 &quot;학술대회&quot;로 호를 등록해 주세요.
+        </p>
+        <ConferenceSettingsForm enabled={conference.enabled} infoText={conference.infoText} />
       </div>
 
       <div className="rounded border border-gray-200 bg-white p-6">

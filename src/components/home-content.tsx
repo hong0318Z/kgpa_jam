@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { auth } from "@/lib/auth";
 import { getTodoItems } from "@/lib/todo";
-import { getOgSettings } from "@/lib/settings";
+import { getOgSettings, getConferenceSettings } from "@/lib/settings";
 
 export async function HomeContent() {
   const session = await auth();
@@ -12,11 +12,12 @@ export async function HomeContent() {
     take: 5,
   });
   const openVolumes = await prisma.volume.findMany({
-    where: { status: "OPEN" },
+    where: { status: "OPEN", type: "JOURNAL" },
     orderBy: { callStartDate: "desc" },
   });
   const todoItems = session?.user ? await getTodoItems(session.user) : [];
   const { ogImageStoredPath } = await getOgSettings();
+  const conference = await getConferenceSettings();
 
   return (
     <div className="flex flex-col gap-10">
@@ -68,6 +69,15 @@ export async function HomeContent() {
           </Link>
         </div>
       </section>
+
+      {conference.enabled && (
+        <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+          <p className="text-sm font-semibold text-indigo-900">학술대회 안내</p>
+          <Link href="/conference" className="mt-1 inline-block text-sm text-indigo-800 underline">
+            학술대회 페이지로 이동 · 투고하기
+          </Link>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-gray-900">현재 투고 모집중인 호</h2>

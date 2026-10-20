@@ -15,6 +15,13 @@ export default function NewVolumePage() {
           <input name="label" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>
         <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">구분</label>
+          <select name="type" className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+            <option value="JOURNAL">학술지</option>
+            <option value="CONFERENCE">학술대회</option>
+          </select>
+        </div>
+        <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">투고 모집 시작일</label>
           <input name="callStartDate" type="date" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>

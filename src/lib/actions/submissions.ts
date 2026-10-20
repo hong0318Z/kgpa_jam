@@ -736,3 +736,24 @@ export async function deleteSubmissionFile(fileId: string): Promise<{ error?: st
   revalidatePath(`/submissions/${file.submissionId}/edit`);
   return {};
 }
+
+export async function setSubmissionAward(submissionId: string, formData: FormData) {
+  const session = await requireRole(ADMIN_ROLES);
+  const award = String(formData.get("award") ?? "").trim();
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { award: award || null },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_AWARD_SET",
+    targetType: "Submission",
+    targetId: submissionId,
+    metadata: { award: award || null },
+  });
+
+  revalidatePath(`/admin/submissions/${submissionId}/assign`);
+  revalidatePath("/conference");
+}

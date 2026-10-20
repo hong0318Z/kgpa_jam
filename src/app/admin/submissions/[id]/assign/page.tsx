@@ -8,6 +8,7 @@ import {
   updateReviewDueDate,
   setSubmissionUrgent,
   makeDecision,
+  setSubmissionAward,
 } from "@/lib/actions/submissions";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
@@ -137,6 +138,40 @@ export default async function AssignReviewerPage({
           </details>
         </div>
       </div>
+
+      {submission.volume.type === "CONFERENCE" && (
+        <div className="rounded border border-indigo-200 bg-indigo-50 p-6">
+          <h2 className="mb-1 text-sm font-semibold text-gray-900">학술대회 투고</h2>
+          <p className="mb-3 text-xs text-gray-600">
+            심사위원 배정 없이{" "}
+            <Link href={`/admin/submissions/${submission.id}/decide`} className="underline">
+              바로 게재 결정
+            </Link>
+            을 내려 혼자서 처리할 수 있습니다. 수상작은 아래에 수상명을 입력하면 학술대회 페이지에
+            표시됩니다(비우면 해제).
+          </p>
+          <form
+            action={async (formData) => {
+              "use server";
+              await setSubmissionAward(submission.id, formData);
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              name="award"
+              defaultValue={submission.award ?? ""}
+              placeholder="예: 우수 포스터상"
+              className="w-64 rounded border border-gray-300 px-2 py-1.5 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+            >
+              수상 표기 저장
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">업로드 파일 전체 내역</h2>

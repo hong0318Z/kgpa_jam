@@ -22,6 +22,7 @@ export async function createVolume(
   const callStartDate = String(formData.get("callStartDate") ?? "");
   const callEndDate = String(formData.get("callEndDate") ?? "");
   const plannedPublishDate = String(formData.get("plannedPublishDate") ?? "");
+  const type = formData.get("type") === "CONFERENCE" ? "CONFERENCE" : "JOURNAL";
 
   if (!label || !callStartDate || !callEndDate || !plannedPublishDate) {
     return { error: "모든 항목을 입력해 주세요." };
@@ -33,6 +34,7 @@ export async function createVolume(
       callStartDate: new Date(callStartDate),
       callEndDate: new Date(callEndDate),
       plannedPublishDate: new Date(plannedPublishDate),
+      type,
     },
   });
 

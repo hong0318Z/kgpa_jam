@@ -4,6 +4,7 @@ import { ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
 import { MobileNav } from "@/components/mobile-nav";
 import { NavGroup } from "@/components/nav-group";
 import { stopImpersonation } from "@/lib/actions/impersonation";
+import { getConferenceSettings } from "@/lib/settings";
 
 const NAV_LINKS = [
   { href: "/journal", label: "학술지" },
@@ -19,6 +20,10 @@ const INFO_LINKS = [
 
 export async function SiteHeader() {
   const session = await auth();
+  const conference = await getConferenceSettings();
+  const navLinks = conference.enabled
+    ? [...NAV_LINKS, { href: "/conference", label: "학술대회" }]
+    : NAV_LINKS;
 
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -46,7 +51,7 @@ export async function SiteHeader() {
             </span>
           </Link>
           <MobileNav>
-            {NAV_LINKS.map((l) => (
+            {navLinks.map((l) => (
               <Link key={l.href} href={l.href} className="text-gray-700 hover:underline">
                 {l.label}
               </Link>
