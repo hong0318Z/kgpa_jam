@@ -25,6 +25,7 @@ enum VolumeType {
 enum ConferenceFormat {
   PROCEEDINGS
   POSTER
+  ARTWORK
 }
 
 enum VolumeStatus {
@@ -113,6 +114,7 @@ model Volume {
   plannedPublishDate DateTime // 발간예정일
   status             VolumeStatus @default(OPEN)
   type               VolumeType   @default(JOURNAL)
+  conferenceFormats  ConferenceFormat[] @default([PROCEEDINGS, POSTER])
   compiledFileStoredPath   String?
   compiledFileOriginalName String?
   compiledFileMimeType     String?

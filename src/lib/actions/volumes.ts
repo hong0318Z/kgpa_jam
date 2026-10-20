@@ -8,7 +8,15 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { saveUploadedFile, deleteStoredFile } from "@/lib/storage";
 import type { ActionResult } from "@/lib/actions/auth";
-import type { VolumeStatus } from "@/generated/prisma/client";
+import type { VolumeStatus, ConferenceFormat } from "@/generated/prisma/client";
+import { CONFERENCE_FORMATS } from "@/lib/labels";
+
+function parseFormats(formData: FormData): ConferenceFormat[] {
+  return formData
+    .getAll("conferenceFormats")
+    .map(String)
+    .filter((f): f is ConferenceFormat => (CONFERENCE_FORMATS as readonly string[]).includes(f));
+}
 
 const ALLOWED_EXT = [".pdf"];
 
@@ -23,6 +31,9 @@ export async function createVolume(
   const callEndDate = String(formData.get("callEndDate") ?? "");
   const plannedPublishDate = String(formData.get("plannedPublishDate") ?? "");
   const type = formData.get("type") === "CONFERENCE" ? "CONFERENCE" : "JOURNAL";
+  if (type === "CONFERENCE" && parseFormats(formData).length === 0) {
+    return { error: "학술대회는 접수 형식(포스터/논문/작품)을 하나 이상 선택해 주세요." };
+  }
 
   if (!label || !callStartDate || !callEndDate || !plannedPublishDate) {
     return { error: "모든 항목을 입력해 주세요." };
@@ -35,6 +46,7 @@ export async function createVolume(
       callEndDate: new Date(callEndDate),
       plannedPublishDate: new Date(plannedPublishDate),
       type,
+      ...(type === "CONFERENCE" ? { conferenceFormats: parseFormats(formData) } : {}),
     },
   });
 
@@ -72,12 +84,19 @@ export async function updateVolumeDates(
 ): Promise<ActionResult> {
   const session = await requireRole(ADMIN_ROLES);
 
+  const label = String(formData.get("label") ?? "").trim();
   const callStartDate = String(formData.get("callStartDate") ?? "");
   const callEndDate = String(formData.get("callEndDate") ?? "");
   const plannedPublishDate = String(formData.get("plannedPublishDate") ?? "");
 
-  if (!callStartDate || !callEndDate || !plannedPublishDate) {
-    return { error: "모집기간과 발간예정일을 모두 입력해 주세요." };
+  if (!label || !callStartDate || !callEndDate || !plannedPublishDate) {
+    return { error: "호 이름, 모집기간, 발간예정일을 모두 입력해 주세요." };
+  }
+  const existing = await prisma.volume.findUnique({ where: { id: volumeId } });
+  if (!existing) return { error: "존재하지 않는 호입니다." };
+  const formats = parseFormats(formData);
+  if (existing.type === "CONFERENCE" && formats.length === 0) {
+    return { error: "접수 형식(포스터/논문/작품)을 하나 이상 선택해 주세요." };
   }
   if (new Date(callStartDate) > new Date(callEndDate)) {
     return { error: "모집 시작일이 종료일보다 늦을 수 없습니다." };
@@ -86,9 +105,11 @@ export async function updateVolumeDates(
   await prisma.volume.update({
     where: { id: volumeId },
     data: {
+      label,
       callStartDate: new Date(callStartDate),
       callEndDate: new Date(callEndDate),
       plannedPublishDate: new Date(plannedPublishDate),
+      ...(existing.type === "CONFERENCE" ? { conferenceFormats: formats } : {}),
     },
   });
 
@@ -97,13 +118,15 @@ export async function updateVolumeDates(
     action: "VOLUME_UPDATED",
     targetType: "Volume",
     targetId: volumeId,
-    metadata: { callStartDate, callEndDate, plannedPublishDate },
+    metadata: { label, callStartDate, callEndDate, plannedPublishDate, formats },
   });
 
   revalidatePath("/admin/volumes");
   revalidatePath("/journal");
   revalidatePath(`/journal/${volumeId}`);
-  return { success: "기간이 변경되었습니다." };
+  revalidatePath("/conference");
+  revalidatePath("/");
+  return { success: "저장되었습니다." };
 }
 
 export async function uploadCompiledVolumeFile(

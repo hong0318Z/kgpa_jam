@@ -11,6 +11,7 @@ import {
   setSubmissionAward,
 } from "@/lib/actions/submissions";
 import { formatDate, formatDateTime } from "@/lib/date";
+import { CONFERENCE_FORMAT_LABELS } from "@/lib/labels";
 import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
 import { FileActions } from "@/components/file-actions";
 
@@ -143,7 +144,9 @@ export default async function AssignReviewerPage({
         <div className="rounded border border-indigo-200 bg-indigo-50 p-6">
           <h2 className="mb-1 text-sm font-semibold text-gray-900">
             학술대회 투고 ·{" "}
-            {submission.conferenceFormat === "POSTER" ? "포스터" : "논문(프로시딩)"}
+            {submission.conferenceFormat
+              ? (CONFERENCE_FORMAT_LABELS[submission.conferenceFormat] ?? submission.conferenceFormat)
+              : "-"}
           </h2>
           <p className="mb-3 text-xs text-gray-600">
             심사위원 배정 없이{" "}

@@ -4,6 +4,7 @@ import { formatDate, formatDateTime } from "@/lib/date";
 import { auth } from "@/lib/auth";
 import { getTodoItems } from "@/lib/todo";
 import { getOgSettings, getConferenceSettings } from "@/lib/settings";
+import { CONFERENCE_FORMAT_LABELS } from "@/lib/labels";
 
 export async function HomeContent() {
   const session = await auth();
@@ -62,7 +63,8 @@ export async function HomeContent() {
                 <li key={v.id}>
                   <span className="font-medium">{v.label}</span>
                   <span className="ml-2 text-indigo-700">
-                    모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)}
+                    모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)} · 접수:{" "}
+                    {v.conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ")}
                   </span>
                 </li>
               ))}

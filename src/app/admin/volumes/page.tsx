@@ -45,6 +45,9 @@ export default async function AdminVolumesPage() {
               <td className="px-4 py-2 text-gray-600">
                 <VolumeDatesForm
                   volumeId={v.id}
+                  label={v.label}
+                  type={v.type}
+                  conferenceFormats={v.conferenceFormats}
                   callStartDate={v.callStartDate}
                   callEndDate={v.callEndDate}
                   plannedPublishDate={v.plannedPublishDate}

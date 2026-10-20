@@ -10,6 +10,7 @@ type Volume = {
   label: string;
   callStartDate: Date;
   callEndDate: Date;
+  conferenceFormats?: string[];
 };
 
 type Author = { name: string; affiliation: string };
@@ -17,10 +18,14 @@ type Author = { name: string; affiliation: string };
 export function PosterForm({
   volumes,
   pledgeAuthorNames,
+  format = "POSTER",
 }: {
   volumes: Volume[];
   pledgeAuthorNames?: string;
+  format?: "POSTER" | "ARTWORK";
 }) {
+  const noun = format === "ARTWORK" ? "작품" : "포스터";
+  const authorNoun = format === "ARTWORK" ? "작가" : "저자";
   const [state, formAction, pending] = useActionState(createPosterSubmission, {});
   const [authors, setAuthors] = useState<Author[]>([{ name: "", affiliation: "" }]);
 
@@ -32,10 +37,10 @@ export function PosterForm({
     const missing: string[] = [];
     if (!String(fd.get("title") ?? "").trim()) missing.push("제목을 입력해 주세요.");
     if (authors.some((a) => !a.name.trim() || !a.affiliation.trim())) {
-      missing.push("저자와 소속을 모두 입력해 주세요.");
+      missing.push(`${authorNoun}와(과) 소속을 모두 입력해 주세요.`);
     }
     const hasFile = fd.getAll("posterFile").some((f) => f instanceof File && f.size > 0);
-    if (!hasFile) missing.push("포스터 파일을 첨부해 주세요.");
+    if (!hasFile) missing.push(`${noun} 파일을 첨부해 주세요.`);
     if (missing.length > 0) {
       e.preventDefault();
       alert(missing.join("\n"));
@@ -44,6 +49,7 @@ export function PosterForm({
 
   return (
     <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <input type="hidden" name="format" value={format} />
       <input type="hidden" name="pledgeAuthorNames" value={pledgeAuthorNames ?? ""} />
       <input type="hidden" name="authors" value={JSON.stringify(authors)} />
       <div>
@@ -62,14 +68,14 @@ export function PosterForm({
         <input name="title" className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">저자 - 소속</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">{authorNoun} - 소속</label>
         <div className="flex flex-col gap-2">
           {authors.map((a, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
                 value={a.name}
                 onChange={(e) => update(i, { name: e.target.value })}
-                placeholder="저자"
+                placeholder={authorNoun}
                 className="w-40 rounded border border-gray-300 px-3 py-2 text-sm"
               />
               <span className="text-gray-400">-</span>
@@ -100,7 +106,7 @@ export function PosterForm({
         </button>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">포스터 파일</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">{noun} 파일</label>
         <FileDropzone
           name="posterFile"
           accept=".pdf,.png,.jpg,.jpeg"
@@ -113,7 +119,7 @@ export function PosterForm({
         disabled={pending || volumes.length === 0}
         className="w-fit rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
       >
-        {pending ? "제출 중..." : "포스터 제출하기"}
+        {pending ? "제출 중..." : `${noun} 제출하기`}
       </button>
     </form>
   );

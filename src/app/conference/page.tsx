@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getConferenceSettings } from "@/lib/settings";
 import { formatDate } from "@/lib/date";
+import { CONFERENCE_FORMAT_LABELS } from "@/lib/labels";
 
 export default async function ConferencePage() {
   const { enabled, infoText } = await getConferenceSettings();
@@ -36,7 +37,8 @@ export default async function ConferencePage() {
             <ul className="mt-3 text-sm text-gray-600">
               {openVolumes.map((v) => (
                 <li key={v.id}>
-                  {v.label} · 모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)}
+                  {v.label} · 모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)} · 접수:{" "}
+                  {v.conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ")}
                 </li>
               ))}
             </ul>
@@ -69,6 +71,11 @@ export default async function ConferencePage() {
                   </span>
                 )}
                 {p.title}
+                {p.conferenceFormat && (
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    [{CONFERENCE_FORMAT_LABELS[p.conferenceFormat]}]
+                  </span>
+                )}
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 {p.coauthors.length > 0
@@ -78,7 +85,7 @@ export default async function ConferencePage() {
                   : (p.pledgeAuthorNames ?? "")}{" "}
                 · {p.volume.label}
               </p>
-              {p.conferenceFormat === "POSTER" && p.files[0] ? (
+              {(p.conferenceFormat === "POSTER" || p.conferenceFormat === "ARTWORK") && p.files[0] ? (
                 p.files[0].mimeType.startsWith("image/") ? (
                   <a href={`/api/conference/posters/${p.files[0].id}`} target="_blank" rel="noopener noreferrer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -95,7 +102,7 @@ export default async function ConferencePage() {
                     rel="noopener noreferrer"
                     className="mt-2 inline-block text-sm text-blue-600 underline"
                   >
-                    포스터 보기 (PDF)
+                    파일 보기 (PDF)
                   </a>
                 )
               ) : (

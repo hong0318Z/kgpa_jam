@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { updateVolumeDates } from "@/lib/actions/volumes";
+import { CONFERENCE_FORMATS, CONFERENCE_FORMAT_LABELS } from "@/lib/labels";
 
 function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -10,11 +11,17 @@ function toDateInputValue(date: Date) {
 
 export function VolumeDatesForm({
   volumeId,
+  label,
+  type,
+  conferenceFormats,
   callStartDate,
   callEndDate,
   plannedPublishDate,
 }: {
   volumeId: string;
+  label: string;
+  type: string;
+  conferenceFormats: string[];
   callStartDate: Date;
   callEndDate: Date;
   plannedPublishDate: Date;
@@ -35,12 +42,18 @@ export function VolumeDatesForm({
           {callEndDate.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
         </p>
         <p>발간예정: {plannedPublishDate.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
+        {type === "CONFERENCE" && (
+          <p>
+            접수:{" "}
+            {conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ") || "-"}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => setEditing(true)}
           className="mt-1 text-xs text-gray-500 hover:underline"
         >
-          기간 수정
+          수정
         </button>
       </div>
     );
@@ -48,6 +61,14 @@ export function VolumeDatesForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-1.5">
+      <label className="flex items-center gap-1 text-xs text-gray-600">
+        호 이름
+        <input
+          name="label"
+          defaultValue={label}
+          className="w-56 rounded border border-gray-300 px-1.5 py-0.5 text-xs"
+        />
+      </label>
       <label className="flex items-center gap-1 text-xs text-gray-600">
         모집시작
         <input
@@ -75,6 +96,22 @@ export function VolumeDatesForm({
           className="rounded border border-gray-300 px-1.5 py-0.5 text-xs"
         />
       </label>
+      {type === "CONFERENCE" && (
+        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+          <span>접수 형식</span>
+          {CONFERENCE_FORMATS.map((f) => (
+            <label key={f} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                name="conferenceFormats"
+                value={f}
+                defaultChecked={conferenceFormats.includes(f)}
+              />
+              {CONFERENCE_FORMAT_LABELS[f]}
+            </label>
+          ))}
+        </div>
+      )}
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
       <div className="flex items-center gap-2">
         <button

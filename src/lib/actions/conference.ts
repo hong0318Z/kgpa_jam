@@ -27,6 +27,8 @@ export async function createPosterSubmission(
   const volumeId = String(formData.get("volumeId") ?? "");
   const pledgeAuthorNames = String(formData.get("pledgeAuthorNames") ?? "").trim();
   const file = formData.get("posterFile");
+  const format = formData.get("format") === "ARTWORK" ? "ARTWORK" : "POSTER";
+  const formatLabel = format === "ARTWORK" ? "작품" : "포스터";
 
   let authors: PosterAuthor[] = [];
   try {
@@ -44,16 +46,19 @@ export async function createPosterSubmission(
     return { error: "저자와 소속을 모두 입력해 주세요." };
   }
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "포스터 파일을 첨부해 주세요." };
+    return { error: `${formatLabel} 파일을 첨부해 주세요.` };
   }
   const ext = path.extname(file.name).toLowerCase();
   const mimeType = POSTER_MIME_BY_EXT[ext];
-  if (!mimeType) return { error: "포스터는 PDF, PNG, JPG 파일만 업로드할 수 있습니다." };
+  if (!mimeType) return { error: `${formatLabel}은(는) PDF, PNG, JPG 파일만 업로드할 수 있습니다.` };
   if (file.size > 20 * 1024 * 1024) return { error: "파일 크기는 20MB를 초과할 수 없습니다." };
 
   const volume = await prisma.volume.findUnique({ where: { id: volumeId } });
   if (!volume || volume.type !== "CONFERENCE" || volume.status !== "OPEN") {
     return { error: "현재 투고를 받고 있는 학술대회가 아닙니다." };
+  }
+  if (!volume.conferenceFormats.includes(format)) {
+    return { error: `이 학술대회는 ${formatLabel} 투고를 받지 않습니다.` };
   }
 
   const submission = await prisma.submission.create({
@@ -65,7 +70,7 @@ export async function createPosterSubmission(
       pledgeAuthorNames,
       fields: [],
       authorId: session.user.id,
-      conferenceFormat: "POSTER",
+      conferenceFormat: format,
     },
   });
 
@@ -95,7 +100,7 @@ export async function createPosterSubmission(
     action: "SUBMISSION_CREATED",
     targetType: "Submission",
     targetId: submission.id,
-    metadata: { title, volumeId, format: "POSTER" },
+    metadata: { title, volumeId, format },
   });
   await logAudit({
     actorId: session.user.id,

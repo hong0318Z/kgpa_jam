@@ -60,3 +60,11 @@ export const SUBMISSION_FIELDS: { value: string; label: string; description: str
 export const SUBMISSION_FIELD_LABELS: Record<string, string> = Object.fromEntries(
   SUBMISSION_FIELDS.map((f) => [f.value, f.label]),
 );
+
+export const CONFERENCE_FORMAT_LABELS: Record<string, string> = {
+  PROCEEDINGS: "논문(프로시딩)",
+  POSTER: "포스터",
+  ARTWORK: "작품",
+};
+
+export const CONFERENCE_FORMATS = ["POSTER", "PROCEEDINGS", "ARTWORK"] as const;

@@ -17,7 +17,7 @@ export async function GET(
       kind: "MAIN",
       submission: {
         status: "ACCEPTED",
-        conferenceFormat: "POSTER",
+        conferenceFormat: { in: ["POSTER", "ARTWORK"] },
         volume: { type: "CONFERENCE" },
       },
     },
