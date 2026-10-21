@@ -110,5 +110,5 @@ export async function createPosterSubmission(
     metadata: { originalName: saved.originalName },
   });
 
-  redirect(`/submissions/${submission.id}`);
+  redirect("/conference/thanks");
 }

@@ -178,6 +178,9 @@ export async function createSubmission(
     });
   }
 
+  if (targetVolume?.type === "CONFERENCE") {
+    redirect("/conference/thanks");
+  }
   redirect(`/submissions/${submission.id}`);
 }
 
