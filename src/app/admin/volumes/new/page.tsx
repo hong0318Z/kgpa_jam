@@ -61,6 +61,20 @@ export default function NewVolumePage() {
           <label className="mb-1 block text-sm font-medium text-gray-700">발간예정일</label>
           <input name="plannedPublishDate" type="date" required className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
         </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">안내 내용 (선택)</label>
+          <textarea
+            name="infoText"
+            rows={4}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            안내 포스터 이미지 (선택, JPG/PNG/WEBP)
+          </label>
+          <input type="file" name="infoImage" accept="image/jpeg,image/png,image/webp" />
+        </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
           type="submit"

@@ -46,6 +46,8 @@ export default async function AdminVolumesPage() {
                 <VolumeDatesForm
                   volumeId={v.id}
                   label={v.label}
+                  infoText={v.infoText}
+                  hasInfoImage={!!v.infoImageStoredPath}
                   type={v.type}
                   conferenceFormats={v.conferenceFormats}
                   callStartDate={v.callStartDate}

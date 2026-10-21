@@ -12,6 +12,8 @@ function toDateInputValue(date: Date) {
 export function VolumeDatesForm({
   volumeId,
   label,
+  infoText,
+  hasInfoImage,
   type,
   conferenceFormats,
   callStartDate,
@@ -20,6 +22,8 @@ export function VolumeDatesForm({
 }: {
   volumeId: string;
   label: string;
+  infoText: string | null;
+  hasInfoImage: boolean;
   type: string;
   conferenceFormats: string[];
   callStartDate: Date;
@@ -48,6 +52,9 @@ export function VolumeDatesForm({
             {conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ") || "-"}
           </p>
         )}
+        <p className="text-xs text-gray-400">
+          안내: {hasInfoImage ? "포스터 있음" : "포스터 없음"} · {infoText ? "내용 있음" : "내용 없음"}
+        </p>
         <button
           type="button"
           onClick={() => setEditing(true)}
@@ -112,6 +119,33 @@ export function VolumeDatesForm({
           ))}
         </div>
       )}
+      <label className="flex flex-col gap-1 text-xs text-gray-600">
+        안내 내용 (메인/학술대회 페이지에 표시)
+        <textarea
+          name="infoText"
+          defaultValue={infoText ?? ""}
+          rows={4}
+          className="w-72 rounded border border-gray-300 px-1.5 py-1 text-xs"
+        />
+      </label>
+      <div className="flex flex-col gap-1 text-xs text-gray-600">
+        <span>안내 포스터 이미지 (JPG/PNG/WEBP, 새로 올리면 교체)</span>
+        {hasInfoImage && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/volumes/${volumeId}/info-image`}
+              alt="안내 포스터"
+              className="max-h-32 w-auto rounded border border-gray-200"
+            />
+            <label className="flex items-center gap-1">
+              <input type="checkbox" name="removeInfoImage" />
+              현재 이미지 삭제
+            </label>
+          </>
+        )}
+        <input type="file" name="infoImage" accept="image/jpeg,image/png,image/webp" />
+      </div>
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
       <div className="flex items-center gap-2">
         <button

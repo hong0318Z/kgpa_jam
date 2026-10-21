@@ -36,9 +36,20 @@ export default async function ConferencePage() {
           <>
             <ul className="mt-3 text-sm text-gray-600">
               {openVolumes.map((v) => (
-                <li key={v.id}>
+                <li key={v.id} className="mb-3">
+                  {v.infoImageStoredPath && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/volumes/${v.id}/info-image`}
+                      alt={`${v.label} 안내`}
+                      className="mb-2 max-h-[600px] w-auto max-w-full rounded border border-gray-200"
+                    />
+                  )}
                   {v.label} · 모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)} · 접수:{" "}
                   {v.conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ")}
+                {v.infoText && (
+                    <p className="mt-1 whitespace-pre-wrap text-gray-700">{v.infoText}</p>
+                  )}
                 </li>
               ))}
             </ul>

@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { saveUploadedFile, deleteStoredFile } from "@/lib/storage";
+import { saveUploadedFile, saveUploadedImage, deleteStoredFile } from "@/lib/storage";
 import type { ActionResult } from "@/lib/actions/auth";
 import type { VolumeStatus, ConferenceFormat } from "@/generated/prisma/client";
 import { CONFERENCE_FORMATS } from "@/lib/labels";
@@ -19,6 +19,44 @@ function parseFormats(formData: FormData): ConferenceFormat[] {
 }
 
 const ALLOWED_EXT = [".pdf"];
+const INFO_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+type InfoImageResult =
+  | { error: string }
+  | { data: Record<string, string | number | null> };
+
+async function buildInfoImageData(
+  formData: FormData,
+  current: { infoImageStoredPath: string | null } | null,
+): Promise<InfoImageResult> {
+  const file = formData.get("infoImage");
+  const remove = formData.get("removeInfoImage") === "on";
+
+  if (file instanceof File && file.size > 0) {
+    if (!INFO_IMAGE_TYPES.includes(file.type)) {
+      return { error: "안내 이미지는 JPG, PNG, WEBP만 업로드할 수 있습니다." };
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { error: "안내 이미지는 10MB를 초과할 수 없습니다." };
+    }
+    if (current?.infoImageStoredPath) await deleteStoredFile(current.infoImageStoredPath);
+    const saved = await saveUploadedImage("volume-info", file);
+    return {
+      data: {
+        infoImageStoredPath: saved.storedPath,
+        infoImageMimeType: saved.mimeType,
+        infoImageSizeBytes: saved.sizeBytes,
+      },
+    };
+  }
+  if (remove && current?.infoImageStoredPath) {
+    await deleteStoredFile(current.infoImageStoredPath);
+    return {
+      data: { infoImageStoredPath: null, infoImageMimeType: null, infoImageSizeBytes: null },
+    };
+  }
+  return { data: {} };
+}
 
 export async function createVolume(
   _prev: ActionResult,
@@ -39,8 +77,14 @@ export async function createVolume(
     return { error: "모든 항목을 입력해 주세요." };
   }
 
+  const infoText = String(formData.get("infoText") ?? "").trim();
+  const image = await buildInfoImageData(formData, null);
+  if ("error" in image) return { error: image.error };
+
   const volume = await prisma.volume.create({
     data: {
+      ...image.data,
+      infoText: infoText || null,
       label,
       callStartDate: new Date(callStartDate),
       callEndDate: new Date(callEndDate),
@@ -102,9 +146,15 @@ export async function updateVolumeDates(
     return { error: "모집 시작일이 종료일보다 늦을 수 없습니다." };
   }
 
+  const infoText = String(formData.get("infoText") ?? "").trim();
+  const image = await buildInfoImageData(formData, existing);
+  if ("error" in image) return { error: image.error };
+
   await prisma.volume.update({
     where: { id: volumeId },
     data: {
+      ...image.data,
+      infoText: infoText || null,
       label,
       callStartDate: new Date(callStartDate),
       callEndDate: new Date(callEndDate),
@@ -193,6 +243,9 @@ export async function deleteVolume(volumeId: string): Promise<{ error?: string }
 
   if (volume.compiledFileStoredPath) {
     await deleteStoredFile(volume.compiledFileStoredPath);
+  }
+  if (volume.infoImageStoredPath) {
+    await deleteStoredFile(volume.infoImageStoredPath);
   }
 
   await prisma.volume.delete({ where: { id: volumeId } });

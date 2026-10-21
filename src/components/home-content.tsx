@@ -61,11 +61,22 @@ export async function HomeContent() {
             <ul className="mt-2 space-y-1 text-sm text-indigo-900">
               {conferenceVolumes.map((v) => (
                 <li key={v.id}>
+                  {v.infoImageStoredPath && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/volumes/${v.id}/info-image`}
+                      alt={`${v.label} 안내`}
+                      className="mb-2 max-h-[500px] w-auto max-w-full rounded border border-indigo-200"
+                    />
+                  )}
                   <span className="font-medium">{v.label}</span>
                   <span className="ml-2 text-indigo-700">
                     모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)} · 접수:{" "}
                     {v.conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ")}
                   </span>
+                  {v.infoText && (
+                    <p className="mt-1 whitespace-pre-wrap text-indigo-900">{v.infoText}</p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -125,6 +136,17 @@ export async function HomeContent() {
                   {formatDate(v.callEndDate)} / 발간예정일:{" "}
                   {formatDate(v.plannedPublishDate)}
                 </span>
+                {v.infoText && (
+                  <p className="mt-2 whitespace-pre-wrap text-gray-700">{v.infoText}</p>
+                )}
+                {v.infoImageStoredPath && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/api/volumes/${v.id}/info-image`}
+                    alt={`${v.label} 안내`}
+                    className="mt-3 max-h-[500px] w-auto max-w-full rounded border border-gray-200"
+                  />
+                )}
               </li>
             ))}
           </ul>
