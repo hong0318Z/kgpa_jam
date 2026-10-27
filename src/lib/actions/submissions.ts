@@ -192,7 +192,15 @@ export async function assignReviewer(submissionId: string, reviewerId: string, d
 
   const submission = await prisma.submission.findUniqueOrThrow({
     where: { id: submissionId },
+    include: { coauthors: { select: { userId: true } } },
   });
+
+  if (
+    reviewerId === submission.authorId ||
+    submission.coauthors.some((c) => c.userId === reviewerId)
+  ) {
+    throw new Error("투고자 또는 공저자는 해당 논문의 심사위원으로 배정할 수 없습니다.");
+  }
 
   const defaultPeriodDays = submission.isUrgent ? URGENT_REVIEW_PERIOD_DAYS : DEFAULT_REVIEW_PERIOD_DAYS;
   const effectiveDueDate = dueDate

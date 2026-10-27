@@ -38,10 +38,16 @@ export default async function AssignReviewerPage({
     include: {
       assignments: { include: { reviewer: true, review: true }, orderBy: { assignedAt: "asc" } },
       volume: true,
+      author: true,
+      coauthors: { orderBy: { order: "asc" } },
       files: { orderBy: [{ kind: "asc" }, { version: "asc" }] },
     },
   });
   if (!submission) notFound();
+
+  const coauthorUserIds = new Set(
+    submission.coauthors.map((c) => c.userId).filter((v): v is string => !!v),
+  );
 
   const now = new Date();
   const defaultPeriodDays = submission.isUrgent ? 7 : 14;
@@ -71,6 +77,18 @@ export default async function AssignReviewerPage({
           {submission.round}차 심사
         </p>
         <h1 className="text-xl font-bold text-gray-900">{submission.title}</h1>
+        <p className="mt-1 text-sm text-gray-700">
+          투고자: <span className="font-medium">{submission.author.name}</span>
+          {submission.author.affiliation ? ` (${submission.author.affiliation})` : ""}
+          {submission.coauthors.length > 0 && (
+            <span className="ml-2 text-gray-500">
+              · 공저자:{" "}
+              {submission.coauthors
+                .map((c) => (c.affiliation ? `${c.name}(${c.affiliation})` : c.name))
+                .join(", ")}
+            </span>
+          )}
+        </p>
         {submission.fields.length > 0 && (
           <p className="mt-1 text-xs text-gray-500">
             분야: {submission.fields.map((f) => SUBMISSION_FIELD_LABELS[f] ?? f).join(", ")}
@@ -284,16 +302,24 @@ export default async function AssignReviewerPage({
         <ul className="space-y-2 text-sm">
           {reviewers.map((r) => {
             const fieldMatch = r.preferredFields.some((f) => submission.fields.includes(f));
+            const isAuthor = r.id === submission.authorId;
+            const isCoauthor = coauthorUserIds.has(r.id);
             return (
             <li key={r.id} className="flex items-center justify-between gap-2">
               <span>
                 {r.name} ({r.affiliation ?? "-"})
+                {(isAuthor || isCoauthor) && (
+                  <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
+                    {isAuthor ? "투고자 본인" : "공저자"} · 배정 불가
+                  </span>
+                )}
                 {fieldMatch && (
                   <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
                     선호분야 일치
                   </span>
                 )}
               </span>
+              {!isAuthor && !isCoauthor && (
               <form
                 action={async (formData) => {
                   "use server";
@@ -312,6 +338,7 @@ export default async function AssignReviewerPage({
                   배정
                 </button>
               </form>
+              )}
             </li>
             );
           })}
