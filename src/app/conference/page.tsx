@@ -18,15 +18,24 @@ export default async function ConferencePage() {
     where: { type: "CONFERENCE", status: "OPEN" },
     orderBy: { callStartDate: "desc" },
   });
-  const posters = await prisma.submission.findMany({
+  const allPosters = await prisma.submission.findMany({
     where: { status: "ACCEPTED", volume: { type: "CONFERENCE" } },
     include: {
       volume: true,
       coauthors: { orderBy: { order: "asc" } },
       files: { where: { kind: "MAIN" }, orderBy: { version: "asc" }, take: 1 },
     },
-    orderBy: [{ award: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    orderBy: { createdAt: "asc" },
   });
+  // 최우수상은 항상 맨 위에 두고, 나머지는 새로고침할 때마다 무작위로 섞어 노출 순서가 공평하도록 한다.
+  const isTopAward = (award: string | null) => !!award && award.includes("최우수");
+  const topPosters = allPosters.filter((p) => isTopAward(p.award));
+  const otherPosters = allPosters.filter((p) => !isTopAward(p.award));
+  for (let i = otherPosters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherPosters[i], otherPosters[j]] = [otherPosters[j], otherPosters[i]];
+  }
+  const posters = [...topPosters, ...otherPosters];
 
   return (
     <div className="flex flex-col gap-8">
