@@ -3,8 +3,11 @@
 import path from "path";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { requireSession } from "@/lib/rbac";
-import { saveUploadedFile } from "@/lib/storage";
+import { requireSession, requireRole, ADMIN_ROLES } from "@/lib/rbac";
+import { saveUploadedFile, readStoredFile, writeStoredFile } from "@/lib/storage";
+import { rotatePosterBuffer } from "@/lib/poster-rotate";
+import { invalidatePosterThumbnail } from "@/lib/poster-thumb";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/lib/actions/auth";
 
@@ -111,4 +114,36 @@ export async function createPosterSubmission(
   });
 
   redirect("/conference/thanks");
+}
+
+export async function rotatePosterFile(fileId: string, angle: 90 | 270) {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const file = await prisma.submissionFile.findFirst({
+    where: {
+      id: fileId,
+      kind: "MAIN",
+      submission: { conferenceFormat: { in: ["POSTER", "ARTWORK"] } },
+    },
+  });
+  if (!file) return;
+
+  const rotated = await rotatePosterBuffer(await readStoredFile(file.storedPath), file.mimeType, angle);
+  await writeStoredFile(file.storedPath, rotated);
+  await prisma.submissionFile.update({
+    where: { id: file.id },
+    data: { sizeBytes: rotated.length },
+  });
+  await invalidatePosterThumbnail(file.id);
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "POSTER_ROTATED",
+    targetType: "Submission",
+    targetId: file.submissionId,
+    metadata: { originalName: file.originalName, angle },
+  });
+
+  revalidatePath("/conference");
+  revalidatePath(`/admin/submissions/${file.submissionId}/assign`);
 }

@@ -73,3 +73,9 @@ export async function deleteStoredFile(storedPath: string) {
     // 이미 없으면 무시
   }
 }
+
+export async function writeStoredFile(storedPath: string, data: Buffer) {
+  const abs = resolveStoredPath(storedPath);
+  await fs.mkdir(path.dirname(abs), { recursive: true });
+  await fs.writeFile(abs, data);
+}

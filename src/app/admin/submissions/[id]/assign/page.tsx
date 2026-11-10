@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/submissions";
 import { formatDate, formatDateTime } from "@/lib/date";
 import { CONFERENCE_FORMAT_LABELS } from "@/lib/labels";
+import { rotatePosterFile } from "@/lib/actions/conference";
 import { REVIEW_STATUS_LABELS, RECOMMENDATION_LABELS, SUBMISSION_FIELD_LABELS } from "@/lib/labels";
 import { FileActions } from "@/components/file-actions";
 
@@ -208,6 +209,34 @@ export default async function AssignReviewerPage({
                 label={`[${FILE_KIND_LABELS[f.kind] ?? f.kind}] v${f.version} - ${f.originalName}`}
               />{" "}
               <span className="text-xs text-gray-500">({formatDateTime(f.uploadedAt)})</span>
+              {f.kind === "MAIN" &&
+                (submission.conferenceFormat === "POSTER" ||
+                  submission.conferenceFormat === "ARTWORK") && (
+                  <span className="ml-3 inline-flex gap-2">
+                    <form
+                      action={async () => {
+                        "use server";
+                        await rotatePosterFile(f.id, 270);
+                      }}
+                      className="inline"
+                    >
+                      <button type="submit" className="text-xs text-gray-600 underline">
+                        ↺ 왼쪽 회전
+                      </button>
+                    </form>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await rotatePosterFile(f.id, 90);
+                      }}
+                      className="inline"
+                    >
+                      <button type="submit" className="text-xs text-gray-600 underline">
+                        ↻ 오른쪽 회전
+                      </button>
+                    </form>
+                  </span>
+                )}
             </li>
           ))}
           {submission.files.length === 0 && <li className="text-gray-500">업로드된 파일이 없습니다.</li>}

@@ -34,6 +34,7 @@ export type AuditAction =
   | "WELCOME_EMAIL_SENT"
   | "USER_DELETED"
   | "FILE_DOWNLOADED"
+  | "POSTER_ROTATED"
   | "REVIEW_DUE_DATE_SET"
   | "IMPERSONATION_STARTED"
   | "IMPERSONATION_STOPPED"
@@ -99,6 +100,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   WELCOME_EMAIL_SENT: "가입환영 메일 발송",
   USER_DELETED: "계정 삭제",
   FILE_DOWNLOADED: "논문 파일 다운로드",
+  POSTER_ROTATED: "포스터 회전",
   REVIEW_DUE_DATE_SET: "심사 마감일 설정",
   IMPERSONATION_STARTED: "테스트 계정 전환",
   IMPERSONATION_STOPPED: "테스트 계정 전환 해제",

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { requireRole, requireSession, ForbiddenError, ADMIN_ROLES } from "@/lib/rbac";
 import { saveUploadedFile, deleteStoredFile } from "@/lib/storage";
+import { invalidatePosterThumbnail } from "@/lib/poster-thumb";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
@@ -365,6 +366,7 @@ export async function deleteSubmission(submissionId: string): Promise<{ error?: 
   // DB 행은 cascade로 삭제되지만 업로드된 실제 파일은 별도로 지워야 한다.
   for (const file of submission.files) {
     await deleteStoredFile(file.storedPath);
+    await invalidatePosterThumbnail(file.id);
   }
 
   await logAudit({
