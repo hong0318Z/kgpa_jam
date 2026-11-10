@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { getConferenceSettings } from "@/lib/settings";
 import { formatDate } from "@/lib/date";
 import { CONFERENCE_FORMAT_LABELS } from "@/lib/labels";
+import { PdfPreview } from "./pdf-preview";
 
 export default async function ConferencePage() {
   const { enabled, infoText } = await getConferenceSettings();
@@ -107,14 +108,10 @@ export default async function ConferencePage() {
                     />
                   </a>
                 ) : (
-                  <a
-                    href={`/api/conference/posters/${p.files[0].id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm text-blue-600 underline"
-                  >
-                    파일 보기 (PDF)
-                  </a>
+                  <PdfPreview
+                    src={`/api/conference/posters/${p.files[0].id}`}
+                    title={p.title}
+                  />
                 )
               ) : (
                 p.abstract && (
