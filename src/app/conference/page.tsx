@@ -17,6 +17,12 @@ function isThumbnailable(mimeType: string) {
   return THUMBNAILABLE_MIME.includes(mimeType);
 }
 
+function fileKind(mimeType: string): "image" | "pdf" | "office" {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType === "application/pdf") return "pdf";
+  return "office";
+}
+
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -32,6 +38,7 @@ export default async function ConferencePage() {
 
   const session = await auth();
   const isAdmin = !!session?.user && ADMIN_ROLES.includes(session.user.role);
+  const baseUrl = (process.env.NEXTAUTH_URL ?? "").replace(/\/$/, "");
 
   const volumes = await prisma.volume.findMany({
     where: { type: "CONFERENCE" },
@@ -191,47 +198,45 @@ export default async function ConferencePage() {
                 <section id={`keynote-${v.id}`} className="scroll-mt-16">
                   <p className="text-xs font-bold uppercase tracking-wide text-indigo-600">Keynote</p>
                   <h3 className="mb-4 text-lg font-semibold text-gray-900">특강</h3>
-                  <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  <ul className="flex flex-col gap-4">
                     {v.keynotes.map((k) => {
                       const hasFile = !!(k.storedPath && k.mimeType);
-                      const canPreview = hasFile && isThumbnailable(k.mimeType!);
+                      const canThumb = hasFile && isThumbnailable(k.mimeType!);
+                      const kind = hasFile ? fileKind(k.mimeType!) : "pdf";
+                      const relSrc = `/api/conference/keynote-file/${k.id}`;
+                      const viewSrc = kind === "office" ? `${baseUrl}${relSrc}` : relSrc;
                       const cover = (
-                        <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-t-lg bg-gray-50">
-                          {canPreview ? (
+                        <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                          {canThumb ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/api/conference/keynote-file/${k.id}/thumb`}
+                              src={`${relSrc}/thumb`}
                               alt={k.title}
                               loading="lazy"
                               className="h-full w-full object-contain"
                             />
                           ) : (
-                            <span className="text-4xl opacity-30">{hasFile ? "📑" : "📅"}</span>
+                            <span className="text-5xl opacity-30">{hasFile ? "📑" : "📅"}</span>
                           )}
                         </div>
                       );
                       return (
-                        <li key={k.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                        <li key={k.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white p-4">
                           {hasFile ? (
-                            canPreview ? (
-                              <FileViewerModal
-                                src={`/api/conference/keynote-file/${k.id}`}
-                                title={k.title}
-                                isImage={false}
-                                trigger={cover}
-                              />
-                            ) : (
-                              <a href={`/api/conference/keynote-file/${k.id}`} className="block">
-                                {cover}
-                              </a>
-                            )
+                            <FileViewerModal
+                              src={viewSrc}
+                              downloadSrc={`${relSrc}?download=1`}
+                              title={k.title}
+                              kind={kind}
+                              trigger={cover}
+                            />
                           ) : (
                             cover
                           )}
-                          <div className="p-3">
-                            {k.timeLabel && <p className="mb-1 text-[11px] text-gray-400">{k.timeLabel}</p>}
-                            <p className="text-sm font-medium text-gray-900">{k.title}</p>
-                            <p className="text-xs text-gray-500">{k.speaker}</p>
+                          <div className="mt-3">
+                            {k.timeLabel && <p className="mb-1 text-xs text-gray-400">{k.timeLabel}</p>}
+                            <p className="text-base font-semibold text-gray-900">{k.title}</p>
+                            <p className="text-sm text-gray-500">{k.speaker}</p>
                           </div>
                         </li>
                       );
@@ -248,39 +253,37 @@ export default async function ConferencePage() {
                   <p className="mb-3 text-xs text-gray-500">
                     행사 전에 미리 공개된 발표·발제 자료입니다. 로그인 없이 내려받을 수 있습니다.
                   </p>
-                  <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  <ul className="flex flex-col gap-4">
                     {v.materials.map((m) => {
-                      const canPreview = isThumbnailable(m.mimeType);
+                      const canThumb = isThumbnailable(m.mimeType);
+                      const kind = fileKind(m.mimeType);
+                      const relSrc = `/api/volumes/materials/${m.id}`;
+                      const viewSrc = kind === "office" ? `${baseUrl}${relSrc}` : relSrc;
                       const cover = (
-                        <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-t-lg bg-gray-50">
-                          {canPreview ? (
+                        <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                          {canThumb ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/api/volumes/materials/${m.id}/thumb`}
+                              src={`${relSrc}/thumb`}
                               alt={m.title}
                               loading="lazy"
                               className="h-full w-full object-contain"
                             />
                           ) : (
-                            <span className="text-4xl opacity-30">📑</span>
+                            <span className="text-5xl opacity-30">📑</span>
                           )}
                         </div>
                       );
                       return (
-                        <li key={m.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                          {canPreview ? (
-                            <FileViewerModal
-                              src={`/api/volumes/materials/${m.id}`}
-                              title={m.title}
-                              isImage={false}
-                              trigger={cover}
-                            />
-                          ) : (
-                            <a href={`/api/volumes/materials/${m.id}`} className="block">
-                              {cover}
-                            </a>
-                          )}
-                          <p className="p-3 text-sm font-medium text-gray-900">{m.title}</p>
+                        <li key={m.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white p-4">
+                          <FileViewerModal
+                            src={viewSrc}
+                            downloadSrc={`${relSrc}?download=1`}
+                            title={m.title}
+                            kind={kind}
+                            trigger={cover}
+                          />
+                          <p className="mt-3 text-base font-semibold text-gray-900">{m.title}</p>
                         </li>
                       );
                     })}
@@ -316,8 +319,9 @@ export default async function ConferencePage() {
                           {isVisual ? (
                             <FileViewerModal
                               src={`/api/conference/posters/${file.id}?v=${file.sizeBytes}`}
+                              downloadSrc={`/api/conference/posters/${file.id}?download=1`}
                               title={p.title}
-                              isImage={file.mimeType.startsWith("image/")}
+                              kind={file.mimeType.startsWith("image/") ? "image" : "pdf"}
                               trigger={
                                 <div className="block bg-gray-50">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
