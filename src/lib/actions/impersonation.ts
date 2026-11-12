@@ -16,29 +16,16 @@ export async function startImpersonation(targetUserId: string) {
 
   await updateSession({ user: { id: targetUserId } });
   await logAudit({
-    actorId: session.user.id,
-    action: "IMPERSONATION_STARTED",
+    actorId: target.id,
+    action: "LOGIN",
     targetType: "User",
     targetId: target.id,
-    metadata: { name: target.name, role: target.role },
   });
   redirect("/");
 }
 
 export async function stopImpersonation() {
-  const session = await requireSession();
-  const adminId = session.user.impersonatedByAdminId;
-
+  await requireSession();
   await updateSession({ user: { id: STOP_IMPERSONATION_MARKER } });
-
-  if (adminId) {
-    await logAudit({
-      actorId: adminId,
-      action: "IMPERSONATION_STOPPED",
-      targetType: "User",
-      targetId: session.user.id,
-      metadata: { name: session.user.name, role: session.user.role },
-    });
-  }
   redirect("/admin/users");
 }
