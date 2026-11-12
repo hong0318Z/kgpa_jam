@@ -124,11 +124,57 @@ model Volume {
   infoImageStoredPath      String?
   infoImageMimeType        String?
   infoImageSizeBytes       Int?
+  location           String? // 학술대회 개최 장소
+  host               String? // 학술대회 주최
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
   submissions Submission[]
   materials   VolumeMaterial[]
+  greetings   ConferenceGreeting[]
+  keynotes    ConferenceKeynote[]
+  photos      ConferencePhoto[]
+}
+
+model ConferenceGreeting {
+  id              String   @id @default(cuid())
+  volumeId        String
+  volume          Volume   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  name            String
+  org             String?
+  body            String
+  photoStoredPath String?
+  photoMimeType   String?
+  createdAt       DateTime @default(now())
+
+  @@index([volumeId])
+}
+
+model ConferenceKeynote {
+  id           String   @id @default(cuid())
+  volumeId     String
+  volume       Volume   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  title        String
+  speaker      String
+  timeLabel    String?
+  storedPath   String?
+  originalName String?
+  mimeType     String?
+  createdAt    DateTime @default(now())
+
+  @@index([volumeId])
+}
+
+model ConferencePhoto {
+  id         String   @id @default(cuid())
+  volumeId   String
+  volume     Volume   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  storedPath String
+  mimeType   String
+  caption    String?
+  createdAt  DateTime @default(now())
+
+  @@index([volumeId])
 }
 
 model VolumeMaterial {

@@ -7,6 +7,10 @@ import { DeleteVolumeButton } from "./delete-volume-button";
 import { VolumeDatesForm } from "./volume-dates-form";
 import { VolumeMaterialsManager } from "./volume-materials-manager";
 import { AdminPosterForm } from "./admin-poster-form";
+import { VolumeHeroForm } from "./volume-hero-form";
+import { VolumeGreetingsManager } from "./volume-greetings-manager";
+import { VolumeKeynotesManager } from "./volume-keynotes-manager";
+import { VolumePhotosManager } from "./volume-photos-manager";
 
 const STATUS_LABELS = { OPEN: "모집중", CLOSED: "모집마감", PUBLISHED: "발간완료" } as const;
 
@@ -14,7 +18,12 @@ export default async function AdminVolumesPage() {
   await requireRole(ADMIN_ROLES);
   const volumes = await prisma.volume.findMany({
     orderBy: { callStartDate: "desc" },
-    include: { materials: { orderBy: { createdAt: "asc" } } },
+    include: {
+      materials: { orderBy: { createdAt: "asc" } },
+      greetings: { orderBy: { createdAt: "asc" } },
+      keynotes: { orderBy: { createdAt: "asc" } },
+      photos: { orderBy: { createdAt: "asc" } },
+    },
   });
   const journalVolumes = volumes.filter((v) => v.type === "JOURNAL");
   const conferenceVolumes = volumes.filter((v) => v.type === "CONFERENCE");
@@ -154,11 +163,56 @@ export default async function AdminVolumesPage() {
                       plannedPublishDate={v.plannedPublishDate}
                     />
                     <div className="mt-2">{statusForm(v)}</div>
+                    <p className="mb-1.5 mt-4 text-xs font-semibold text-gray-700">
+                      행사 장소 · 주최 (히어로 영역에 표시)
+                    </p>
+                    <VolumeHeroForm volumeId={v.id} location={v.location} host={v.host} />
                   </div>
 
                   <div>
                     <p className="mb-1.5 text-xs font-semibold text-gray-700">발표자료</p>
                     <VolumeMaterialsManager volumeId={v.id} materials={v.materials} />
+                  </div>
+
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-gray-700">
+                      축사 (등록하지 않으면 공개 페이지에 안 보임)
+                    </p>
+                    <VolumeGreetingsManager
+                      volumeId={v.id}
+                      greetings={v.greetings.map((g) => ({
+                        id: g.id,
+                        name: g.name,
+                        org: g.org,
+                        hasPhoto: !!g.photoStoredPath,
+                      }))}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-gray-700">
+                      특강/키노트 (등록하지 않으면 공개 페이지에 안 보임)
+                    </p>
+                    <VolumeKeynotesManager
+                      volumeId={v.id}
+                      keynotes={v.keynotes.map((k) => ({
+                        id: k.id,
+                        title: k.title,
+                        speaker: k.speaker,
+                        timeLabel: k.timeLabel,
+                        hasFile: !!k.storedPath,
+                      }))}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-gray-700">
+                      현장 스케치 (등록하지 않으면 공개 페이지에 안 보임)
+                    </p>
+                    <VolumePhotosManager
+                      volumeId={v.id}
+                      photos={v.photos.map((p) => ({ id: p.id, caption: p.caption }))}
+                    />
                   </div>
 
                   <div className="md:col-span-2">

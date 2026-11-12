@@ -233,7 +233,13 @@ export async function deleteVolume(volumeId: string): Promise<{ error?: string }
 
   const volume = await prisma.volume.findUnique({
     where: { id: volumeId },
-    include: { _count: { select: { submissions: true } } },
+    include: {
+      _count: { select: { submissions: true } },
+      materials: true,
+      greetings: true,
+      keynotes: true,
+      photos: true,
+    },
   });
   if (!volume) {
     return { error: "이미 삭제된 발행 호입니다." };
@@ -247,6 +253,18 @@ export async function deleteVolume(volumeId: string): Promise<{ error?: string }
   }
   if (volume.infoImageStoredPath) {
     await deleteStoredFile(volume.infoImageStoredPath);
+  }
+  for (const m of volume.materials) {
+    await deleteStoredFile(m.storedPath);
+  }
+  for (const g of volume.greetings) {
+    if (g.photoStoredPath) await deleteStoredFile(g.photoStoredPath);
+  }
+  for (const k of volume.keynotes) {
+    if (k.storedPath) await deleteStoredFile(k.storedPath);
+  }
+  for (const p of volume.photos) {
+    await deleteStoredFile(p.storedPath);
   }
 
   await prisma.volume.delete({ where: { id: volumeId } });
