@@ -70,10 +70,13 @@ export async function createSubmission(
 
   const targetVolume = await prisma.volume.findUnique({
     where: { id: volumeId },
-    select: { type: true, conferenceFormats: true },
+    select: { type: true, status: true, conferenceFormats: true },
   });
+  if (!targetVolume || targetVolume.status !== "OPEN") {
+    return { error: "모집이 마감되어 투고할 수 없습니다." };
+  }
   if (
-    targetVolume?.type === "CONFERENCE" &&
+    targetVolume.type === "CONFERENCE" &&
     !targetVolume.conferenceFormats.includes("PROCEEDINGS")
   ) {
     return { error: "이 학술대회는 논문(프로시딩) 투고를 받지 않습니다." };

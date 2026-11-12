@@ -92,6 +92,8 @@ model User {
   feeSettingsUpdated  FeeSettings[]    @relation("FeeSettingsUpdater")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdater")
   volumeMaterialsUploaded VolumeMaterial[] @relation("VolumeMaterialUploader")
+  inquiriesSubmitted      Inquiry[]        @relation("InquirySubmitter")
+  inquiriesRead           Inquiry[]        @relation("InquiryReader")
   passwordResetCodes    PasswordResetCode[] @relation("PasswordResetCodeUser")
 }
 
@@ -439,4 +441,28 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
   @@index([targetType, targetId])
+}
+
+enum InquiryStatus {
+  NEW
+  READ
+}
+
+model Inquiry {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    InquiryStatus @default(NEW)
+  userId    String?
+  user      User?         @relation("InquirySubmitter", fields: [userId], references: [id])
+  readAt    DateTime?
+  readById  String?
+  readBy    User?         @relation("InquiryReader", fields: [readById], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@index([status])
+  @@index([createdAt])
 }

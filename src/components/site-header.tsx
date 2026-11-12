@@ -16,6 +16,7 @@ const INFO_LINKS = [
   { href: "/policies/research-ethics", label: "연구윤리규정" },
   { href: "/policies/review-regulation", label: "심사규정" },
   { href: "/policies/privacy-policy", label: "개인정보처리방침" },
+  { href: "/contact", label: "문의하기" },
 ];
 
 export async function SiteHeader() {

@@ -22,6 +22,7 @@ const ADMIN_GROUPS: { label: string; links: { href: string; label: string }[] }[
     links: [
       { href: "/admin/notices/new", label: "공지 작성" },
       { href: "/admin/resources/new", label: "자료 업로드" },
+      { href: "/admin/inquiries", label: "문의 내역" },
     ],
   },
   {

@@ -31,6 +31,8 @@ export type AuditAction =
   | "SITE_OG_SETTINGS_UPDATED"
   | "SITE_CONFERENCE_SETTINGS_UPDATED"
   | "SUBMISSION_AWARD_SET"
+  | "INQUIRY_SUBMITTED"
+  | "INQUIRY_READ"
   | "WELCOME_EMAIL_SENT"
   | "USER_DELETED"
   | "FILE_DOWNLOADED"
@@ -97,6 +99,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   SITE_OG_SETTINGS_UPDATED: "링크 미리보기(OG) 설정 변경",
   SITE_CONFERENCE_SETTINGS_UPDATED: "학술대회 설정 변경",
   SUBMISSION_AWARD_SET: "수상 표기 변경",
+  INQUIRY_SUBMITTED: "문의 등록",
+  INQUIRY_READ: "문의 확인",
   WELCOME_EMAIL_SENT: "가입환영 메일 발송",
   USER_DELETED: "계정 삭제",
   FILE_DOWNLOADED: "논문 파일 다운로드",

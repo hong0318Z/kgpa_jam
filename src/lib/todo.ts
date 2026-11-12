@@ -93,6 +93,15 @@ export async function getTodoItems(user: { id: string; role: Role }): Promise<To
         });
       }
     }
+
+    const newInquiryCount = await prisma.inquiry.count({ where: { status: "NEW" } });
+    if (newInquiryCount > 0) {
+      items.push({
+        label: `새 문의가 ${newInquiryCount}건 있습니다`,
+        href: "/admin/inquiries",
+        urgent: false,
+      });
+    }
   }
 
   items.sort((a, b) => Number(b.urgent) - Number(a.urgent));
