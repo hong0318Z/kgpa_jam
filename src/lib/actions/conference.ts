@@ -147,3 +147,95 @@ export async function rotatePosterFile(fileId: string, angle: 90 | 270) {
   revalidatePath("/conference");
   revalidatePath(`/admin/submissions/${file.submissionId}/assign`);
 }
+
+export async function addPosterByAdmin(
+  volumeId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const title = String(formData.get("title") ?? "").trim();
+  const format = formData.get("format") === "ARTWORK" ? "ARTWORK" : "POSTER";
+  const formatLabel = format === "ARTWORK" ? "작품" : "포스터";
+  const award = String(formData.get("award") ?? "").trim();
+  const file = formData.get("posterFile");
+
+  let authors: PosterAuthor[] = [];
+  try {
+    authors = JSON.parse(String(formData.get("authors") ?? "[]"));
+  } catch {
+    authors = [];
+  }
+  authors = authors
+    .map((a) => ({ name: String(a.name ?? "").trim(), affiliation: String(a.affiliation ?? "").trim() }))
+    .filter((a) => a.name || a.affiliation);
+
+  if (!title) return { error: "제목을 입력해 주세요." };
+  if (authors.length === 0 || authors.some((a) => !a.name || !a.affiliation)) {
+    return { error: "저자와 소속을 모두 입력해 주세요." };
+  }
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: `${formatLabel} 파일을 첨부해 주세요.` };
+  }
+  const ext = path.extname(file.name).toLowerCase();
+  const mimeType = POSTER_MIME_BY_EXT[ext];
+  if (!mimeType) return { error: `${formatLabel}은(는) PDF, PNG, JPG 파일만 업로드할 수 있습니다.` };
+  if (file.size > 20 * 1024 * 1024) return { error: "파일 크기는 20MB를 초과할 수 없습니다." };
+
+  const volume = await prisma.volume.findUnique({ where: { id: volumeId } });
+  if (!volume || volume.type !== "CONFERENCE") {
+    return { error: "학술대회 호가 아닙니다." };
+  }
+  if (!volume.conferenceFormats.includes(format)) {
+    return { error: `이 학술대회는 ${formatLabel}을(를) 접수하지 않습니다.` };
+  }
+
+  const submission = await prisma.submission.create({
+    data: {
+      title,
+      abstract: "",
+      keywords: [],
+      volumeId,
+      pledgeAuthorNames: authors.map((a) => a.name).join(", "),
+      fields: [],
+      authorId: session.user.id,
+      conferenceFormat: format,
+      status: "ACCEPTED",
+      award: award || null,
+    },
+  });
+
+  const saved = await saveUploadedFile(submission.id, file);
+  await prisma.submissionFile.create({
+    data: { submissionId: submission.id, version: 1, kind: "MAIN", ...saved, mimeType },
+  });
+
+  await prisma.submissionAuthor.createMany({
+    data: authors.map((a, i) => ({
+      submissionId: submission.id,
+      userId: null,
+      name: a.name,
+      email: "",
+      affiliation: a.affiliation,
+      isCorresponding: false,
+      order: i,
+    })),
+  });
+
+  await prisma.statusLog.create({
+    data: { submissionId: submission.id, toStatus: "ACCEPTED", note: "관리자 직접 등록" },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SUBMISSION_CREATED",
+    targetType: "Submission",
+    targetId: submission.id,
+    metadata: { title, volumeId, format, adminAdded: true },
+  });
+
+  revalidatePath("/conference");
+  revalidatePath("/admin/volumes");
+  return { success: `${formatLabel}이(가) 등록되어 바로 게재되었습니다.` };
+}

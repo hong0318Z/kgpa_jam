@@ -125,7 +125,7 @@ export async function HomeContent() {
       <section>
         <h2 className="mb-3 text-lg font-semibold text-gray-900">현재 투고 모집중인 호</h2>
         {openVolumes.length === 0 ? (
-          <p className="text-sm text-gray-500">현재 모집중인 호가 없습니다.</p>
+          <p className="text-sm text-gray-500">아직 모집중이 아닙니다.</p>
         ) : (
           <ul className="space-y-2">
             {openVolumes.map((v) => (

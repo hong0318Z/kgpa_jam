@@ -44,8 +44,8 @@ export default async function ConferencePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-2xl font-bold text-gray-900">학술대회</h1>
+      <section className="rounded-lg border border-gray-200 border-l-4 border-l-indigo-500 bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-bold text-gray-900">📣 학술대회 안내</h1>
         {imageStoredPath && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -59,9 +59,12 @@ export default async function ConferencePage() {
         )}
         {openVolumes.length > 0 ? (
           <>
-            <ul className="mt-3 text-sm text-gray-600">
+            <ul className="mt-3 flex flex-col gap-3">
               {openVolumes.map((v) => (
-                <li key={v.id} className="mb-3">
+                <li
+                  key={v.id}
+                  className="rounded border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600"
+                >
                   {v.infoImageStoredPath && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -70,9 +73,12 @@ export default async function ConferencePage() {
                       className="mb-2 max-h-[600px] w-auto max-w-full rounded border border-gray-200"
                     />
                   )}
-                  {v.label} · 모집기간: {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)} · 접수:{" "}
-                  {v.conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ")}
-                {v.infoText && (
+                  <p>
+                    <span className="font-medium text-gray-900">{v.label}</span> · 모집기간:{" "}
+                    {formatDate(v.callStartDate)} ~ {formatDate(v.callEndDate)} · 접수:{" "}
+                    {v.conferenceFormats.map((f) => CONFERENCE_FORMAT_LABELS[f] ?? f).join(", ")}
+                  </p>
+                  {v.infoText && (
                     <p className="mt-1 whitespace-pre-wrap text-gray-700">{v.infoText}</p>
                   )}
                 </li>
@@ -96,32 +102,36 @@ export default async function ConferencePage() {
       </section>
 
       {volumesWithMaterials.length > 0 && (
-        <section className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">발표자료</h2>
+        <section className="rounded-lg border border-gray-200 border-l-4 border-l-sky-500 bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-semibold text-gray-900">📄 발표자료</h2>
+          <p className="mb-3 text-xs text-gray-500">
+            행사 전에 미리 공개된 발표·발제 자료입니다. 로그인 없이 내려받을 수 있습니다.
+          </p>
           <div className="flex flex-col gap-4">
             {volumesWithMaterials.map((v) => (
-              <div key={v.id}>
-                <p className="mb-1 text-sm font-medium text-gray-900">{v.label}</p>
-                <ul className="divide-y divide-gray-200 rounded border border-gray-200">
-                  {v.materials.map((m) => (
-                    <li key={m.id} className="px-3 py-2 text-sm">
+              <div key={v.id} className="rounded border border-sky-100 bg-sky-50/50 p-3">
+                <p className="mb-2 text-sm font-medium text-gray-900">{v.label}</p>
+                <ol className="flex flex-col gap-1">
+                  {v.materials.map((m, i) => (
+                    <li key={m.id} className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-400">{i + 1}.</span>
                       <a
                         href={`/api/volumes/materials/${m.id}`}
-                        className="text-blue-600 underline"
+                        className="text-blue-700 underline"
                       >
                         {m.title}
                       </a>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">게재된 포스터 · 논문</h2>
+      <section className="rounded-lg border border-gray-200 border-l-4 border-l-amber-500 bg-white p-6 shadow-sm">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900">🖼️ 게재된 포스터 · 논문</h2>
         {posters.length === 0 ? (
           <p className="rounded border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
             게재된 포스터 논문이 없습니다.
@@ -139,14 +149,14 @@ export default async function ConferencePage() {
                 >
                   {isVisual ? (
                     <a
-                      href={`/api/conference/posters/${file.id}`}
+                      href={`/api/conference/posters/${file.id}?v=${file.sizeBytes}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block bg-gray-50"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`/api/conference/posters/${file.id}/thumb`}
+                        src={`/api/conference/posters/${file.id}/thumb?v=${file.sizeBytes}`}
                         alt={p.title}
                         loading="lazy"
                         className="aspect-[3/4] w-full object-contain"
