@@ -7,6 +7,7 @@ import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { saveUploadedFile, saveUploadedImage, deleteStoredFile } from "@/lib/storage";
+import { invalidatePosterThumbnail } from "@/lib/poster-thumb";
 import type { ActionResult } from "@/lib/actions/auth";
 import type { VolumeStatus, ConferenceFormat } from "@/generated/prisma/client";
 import { CONFERENCE_FORMATS } from "@/lib/labels";
@@ -20,6 +21,11 @@ function parseFormats(formData: FormData): ConferenceFormat[] {
 
 const ALLOWED_EXT = [".pdf"];
 const MATERIAL_ALLOWED_EXT = [".pdf", ".ppt", ".pptx"];
+const MATERIAL_MIME_BY_EXT: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
 const INFO_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type InfoImageResult =
@@ -256,12 +262,16 @@ export async function deleteVolume(volumeId: string): Promise<{ error?: string }
   }
   for (const m of volume.materials) {
     await deleteStoredFile(m.storedPath);
+    await invalidatePosterThumbnail(m.id);
   }
   for (const g of volume.greetings) {
     if (g.photoStoredPath) await deleteStoredFile(g.photoStoredPath);
   }
   for (const k of volume.keynotes) {
-    if (k.storedPath) await deleteStoredFile(k.storedPath);
+    if (k.storedPath) {
+      await deleteStoredFile(k.storedPath);
+      await invalidatePosterThumbnail(k.id);
+    }
   }
   for (const p of volume.photos) {
     await deleteStoredFile(p.storedPath);
@@ -296,7 +306,8 @@ export async function addVolumeMaterial(
   if (!(file instanceof File) || file.size === 0) {
     return { error: "파일을 첨부해 주세요." };
   }
-  if (!MATERIAL_ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
+  const ext = path.extname(file.name).toLowerCase();
+  if (!MATERIAL_ALLOWED_EXT.includes(ext)) {
     return { error: "PDF, PPT, PPTX 파일만 업로드할 수 있습니다." };
   }
   if (file.size > 100 * 1024 * 1024) {
@@ -310,6 +321,7 @@ export async function addVolumeMaterial(
       title,
       uploadedById: session.user.id,
       ...saved,
+      mimeType: MATERIAL_MIME_BY_EXT[ext],
     },
   });
 
@@ -335,6 +347,7 @@ export async function deleteVolumeMaterial(materialId: string): Promise<{ error?
 
   await prisma.volumeMaterial.delete({ where: { id: materialId } });
   await deleteStoredFile(material.storedPath);
+  await invalidatePosterThumbnail(material.id);
 
   await logAudit({
     actorId: session.user.id,

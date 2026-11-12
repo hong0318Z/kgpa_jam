@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 import { addVolumeMaterial, deleteVolumeMaterial } from "@/lib/actions/volumes";
 
-type Material = { id: string; title: string; originalName: string };
+type Material = { id: string; title: string; originalName: string; mimeType: string };
+
+const THUMBNAILABLE_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 function extLabel(originalName: string) {
   const ext = originalName.split(".").pop()?.toUpperCase() ?? "";
@@ -31,7 +33,7 @@ export function VolumeMaterialsManager({
             아직 올린 자료가 없습니다. 기조강연·세션 발표 등 자료를 아래에서 추가해 주세요.
           </p>
         ) : (
-          <ol className="flex flex-col gap-1">
+          <ol className="flex flex-col gap-1.5">
             {materials.map((m, i) => (
               <li
                 key={m.id}
@@ -39,13 +41,24 @@ export function VolumeMaterialsManager({
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="shrink-0 text-gray-400">{i + 1}.</span>
-                  {extLabel(m.originalName) && (
-                    <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 font-medium text-gray-600">
-                      {extLabel(m.originalName)}
-                    </span>
+                  {THUMBNAILABLE_MIME.includes(m.mimeType) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/volumes/materials/${m.id}/thumb`}
+                      alt=""
+                      className="h-10 w-8 shrink-0 rounded border border-gray-200 object-cover"
+                    />
+                  ) : (
+                    extLabel(m.originalName) && (
+                      <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 font-medium text-gray-600">
+                        {extLabel(m.originalName)}
+                      </span>
+                    )
                   )}
                   <a
                     href={`/api/volumes/materials/${m.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="truncate text-blue-700 underline"
                     title={m.originalName}
                   >

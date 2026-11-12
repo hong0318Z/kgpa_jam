@@ -12,6 +12,11 @@ import { PhotoGallery } from "./photo-gallery";
 
 const DEFAULT_HOST = "한국게임정책학회";
 
+const THUMBNAILABLE_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+function isThumbnailable(mimeType: string) {
+  return THUMBNAILABLE_MIME.includes(mimeType);
+}
+
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -186,34 +191,52 @@ export default async function ConferencePage() {
                 <section id={`keynote-${v.id}`} className="scroll-mt-16">
                   <p className="text-xs font-bold uppercase tracking-wide text-indigo-600">Keynote</p>
                   <h3 className="mb-4 text-lg font-semibold text-gray-900">특강</h3>
-                  <div className="flex flex-col gap-2">
-                    {v.keynotes.map((k) => (
-                      <div
-                        key={k.id}
-                        className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-4"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{k.title}</p>
-                          <p className="text-xs text-gray-500">{k.speaker}</p>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                          {k.timeLabel && <span className="text-xs text-gray-400">{k.timeLabel}</span>}
-                          {k.storedPath && (
-                            <FileViewerModal
-                              src={`/api/conference/keynote-file/${k.id}`}
-                              title={k.title}
-                              isImage={false}
-                              trigger={
-                                <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
-                                  🔗 보기
-                                </span>
-                              }
+                  <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {v.keynotes.map((k) => {
+                      const hasFile = !!(k.storedPath && k.mimeType);
+                      const canPreview = hasFile && isThumbnailable(k.mimeType!);
+                      const cover = (
+                        <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-t-lg bg-gray-50">
+                          {canPreview ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={`/api/conference/keynote-file/${k.id}/thumb`}
+                              alt={k.title}
+                              loading="lazy"
+                              className="h-full w-full object-contain"
                             />
+                          ) : (
+                            <span className="text-4xl opacity-30">{hasFile ? "📑" : "📅"}</span>
                           )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      );
+                      return (
+                        <li key={k.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                          {hasFile ? (
+                            canPreview ? (
+                              <FileViewerModal
+                                src={`/api/conference/keynote-file/${k.id}`}
+                                title={k.title}
+                                isImage={false}
+                                trigger={cover}
+                              />
+                            ) : (
+                              <a href={`/api/conference/keynote-file/${k.id}`} className="block">
+                                {cover}
+                              </a>
+                            )
+                          ) : (
+                            cover
+                          )}
+                          <div className="p-3">
+                            {k.timeLabel && <p className="mb-1 text-[11px] text-gray-400">{k.timeLabel}</p>}
+                            <p className="text-sm font-medium text-gray-900">{k.title}</p>
+                            <p className="text-xs text-gray-500">{k.speaker}</p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </section>
               )}
 
@@ -225,16 +248,43 @@ export default async function ConferencePage() {
                   <p className="mb-3 text-xs text-gray-500">
                     행사 전에 미리 공개된 발표·발제 자료입니다. 로그인 없이 내려받을 수 있습니다.
                   </p>
-                  <ol className="flex flex-col gap-1">
-                    {v.materials.map((m, i) => (
-                      <li key={m.id} className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-400">{i + 1}.</span>
-                        <a href={`/api/volumes/materials/${m.id}`} className="text-blue-700 underline">
-                          {m.title}
-                        </a>
-                      </li>
-                    ))}
-                  </ol>
+                  <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {v.materials.map((m) => {
+                      const canPreview = isThumbnailable(m.mimeType);
+                      const cover = (
+                        <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-t-lg bg-gray-50">
+                          {canPreview ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={`/api/volumes/materials/${m.id}/thumb`}
+                              alt={m.title}
+                              loading="lazy"
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-4xl opacity-30">📑</span>
+                          )}
+                        </div>
+                      );
+                      return (
+                        <li key={m.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                          {canPreview ? (
+                            <FileViewerModal
+                              src={`/api/volumes/materials/${m.id}`}
+                              title={m.title}
+                              isImage={false}
+                              trigger={cover}
+                            />
+                          ) : (
+                            <a href={`/api/volumes/materials/${m.id}`} className="block">
+                              {cover}
+                            </a>
+                          )}
+                          <p className="p-3 text-sm font-medium text-gray-900">{m.title}</p>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </section>
               )}
 

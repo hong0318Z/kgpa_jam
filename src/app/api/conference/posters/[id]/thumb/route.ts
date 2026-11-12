@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getPosterThumbnail } from "@/lib/poster-thumb";
+import { getPosterThumbnail, ThumbnailUnsupportedError } from "@/lib/poster-thumb";
 
 export const runtime = "nodejs";
 
@@ -31,6 +31,9 @@ export async function GET(
       },
     });
   } catch (e) {
+    if (e instanceof ThumbnailUnsupportedError) {
+      return new Response("No thumbnail", { status: 404 });
+    }
     console.error("[poster-thumb] failed", id, e);
     return new Response("Thumbnail unavailable", { status: 500 });
   }

@@ -3,7 +3,16 @@
 import { useActionState } from "react";
 import { addKeynote, deleteKeynote } from "@/lib/actions/conference-content";
 
-type Keynote = { id: string; title: string; speaker: string; timeLabel: string | null; hasFile: boolean };
+type Keynote = {
+  id: string;
+  title: string;
+  speaker: string;
+  timeLabel: string | null;
+  hasFile: boolean;
+  mimeType: string | null;
+};
+
+const THUMBNAILABLE_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 export function VolumeKeynotesManager({
   volumeId,
@@ -22,16 +31,37 @@ export function VolumeKeynotesManager({
           등록된 특강이 없습니다. 등록하지 않으면 공개 페이지에 특강 영역이 보이지 않습니다.
         </p>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col gap-1.5">
           {keynotes.map((k) => (
             <li
               key={k.id}
               className="flex items-center justify-between gap-2 rounded border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs"
             >
-              <span className="truncate">
-                {k.timeLabel && <span className="text-gray-400">{k.timeLabel} · </span>}
-                {k.title} <span className="text-gray-500">({k.speaker})</span>
-                {k.hasFile && <span className="ml-1 text-gray-400">(자료)</span>}
+              <span className="flex min-w-0 items-center gap-2">
+                {k.hasFile && k.mimeType && THUMBNAILABLE_MIME.includes(k.mimeType) && (
+                  <a href={`/api/conference/keynote-file/${k.id}`} target="_blank" rel="noopener noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/conference/keynote-file/${k.id}/thumb`}
+                      alt=""
+                      className="h-10 w-8 shrink-0 rounded border border-gray-200 object-cover"
+                    />
+                  </a>
+                )}
+                <span className="truncate">
+                  {k.timeLabel && <span className="text-gray-400">{k.timeLabel} · </span>}
+                  {k.title} <span className="text-gray-500">({k.speaker})</span>
+                  {k.hasFile && (
+                    <a
+                      href={`/api/conference/keynote-file/${k.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1 text-blue-700 underline"
+                    >
+                      자료
+                    </a>
+                  )}
+                </span>
               </span>
               <form
                 action={async () => {

@@ -201,6 +201,7 @@ export default async function AdminVolumesPage() {
                         speaker: k.speaker,
                         timeLabel: k.timeLabel,
                         hasFile: !!k.storedPath,
+                        mimeType: k.mimeType,
                       }))}
                     />
                   </div>

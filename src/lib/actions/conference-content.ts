@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { requireRole, ADMIN_ROLES } from "@/lib/rbac";
 import { saveUploadedFile, saveUploadedImage, deleteStoredFile } from "@/lib/storage";
+import { invalidatePosterThumbnail } from "@/lib/poster-thumb";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/actions/auth";
 
@@ -140,7 +141,10 @@ export async function deleteKeynote(id: string): Promise<{ error?: string }> {
   if (!keynote) return { error: "이미 삭제되었습니다." };
 
   await prisma.conferenceKeynote.delete({ where: { id } });
-  if (keynote.storedPath) await deleteStoredFile(keynote.storedPath);
+  if (keynote.storedPath) {
+    await deleteStoredFile(keynote.storedPath);
+    await invalidatePosterThumbnail(keynote.id);
+  }
 
   await logAudit({
     actorId: session.user.id,

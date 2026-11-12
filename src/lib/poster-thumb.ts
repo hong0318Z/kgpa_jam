@@ -41,11 +41,25 @@ async function renderPdfFirstPage(storedPath: string): Promise<Buffer> {
   }
 }
 
-export async function getPosterThumbnail(file: {
+const THUMBNAIL_SUPPORTED_MIME = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
+export class ThumbnailUnsupportedError extends Error {}
+
+export async function getDocumentThumbnail(file: {
   id: string;
   storedPath: string;
   mimeType: string;
 }): Promise<Buffer> {
+  // PPT/PPTX는 LibreOffice 같은 변환기가 없으면 표지를 만들 수 없어 전용 아이콘으로 대체한다.
+  if (!THUMBNAIL_SUPPORTED_MIME.includes(file.mimeType)) {
+    throw new ThumbnailUnsupportedError(file.mimeType);
+  }
+
   try {
     return await readStoredFile(thumbPath(file.id));
   } catch {
@@ -66,6 +80,8 @@ export async function getPosterThumbnail(file: {
   await writeStoredFile(thumbPath(file.id), thumb);
   return thumb;
 }
+
+export const getPosterThumbnail = getDocumentThumbnail;
 
 export async function invalidatePosterThumbnail(fileId: string) {
   await deleteStoredFile(thumbPath(fileId));
