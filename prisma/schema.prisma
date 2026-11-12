@@ -94,6 +94,7 @@ model User {
   volumeMaterialsUploaded VolumeMaterial[] @relation("VolumeMaterialUploader")
   inquiriesSubmitted      Inquiry[]        @relation("InquirySubmitter")
   inquiriesRead           Inquiry[]        @relation("InquiryReader")
+  inquiriesReplied        Inquiry[]        @relation("InquiryReplier")
   passwordResetCodes    PasswordResetCode[] @relation("PasswordResetCodeUser")
 }
 
@@ -446,22 +447,27 @@ model AuditLog {
 enum InquiryStatus {
   NEW
   READ
+  REPLIED
 }
 
 model Inquiry {
-  id        String        @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  subject   String
-  message   String
-  status    InquiryStatus @default(NEW)
-  userId    String?
-  user      User?         @relation("InquirySubmitter", fields: [userId], references: [id])
-  readAt    DateTime?
-  readById  String?
-  readBy    User?         @relation("InquiryReader", fields: [readById], references: [id])
-  createdAt DateTime      @default(now())
+  id           String        @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  subject      String
+  message      String
+  status       InquiryStatus @default(NEW)
+  userId       String?
+  user         User?         @relation("InquirySubmitter", fields: [userId], references: [id])
+  readAt       DateTime?
+  readById     String?
+  readBy       User?         @relation("InquiryReader", fields: [readById], references: [id])
+  replyMessage String?
+  repliedAt    DateTime?
+  repliedById  String?
+  repliedBy    User?         @relation("InquiryReplier", fields: [repliedById], references: [id])
+  createdAt    DateTime      @default(now())
 
   @@index([status])
   @@index([createdAt])

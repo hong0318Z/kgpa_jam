@@ -30,6 +30,8 @@ export default async function AdminInquiriesPage() {
               message: inq.message,
               status: inq.status,
               createdAt: formatDateTime(inq.createdAt),
+              replyMessage: inq.replyMessage,
+              repliedAt: inq.repliedAt ? formatDateTime(inq.repliedAt) : null,
             }}
           />
         ))}

@@ -33,6 +33,7 @@ export type AuditAction =
   | "SUBMISSION_AWARD_SET"
   | "INQUIRY_SUBMITTED"
   | "INQUIRY_READ"
+  | "INQUIRY_REPLIED"
   | "WELCOME_EMAIL_SENT"
   | "USER_DELETED"
   | "FILE_DOWNLOADED"
@@ -101,6 +102,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   SUBMISSION_AWARD_SET: "수상 표기 변경",
   INQUIRY_SUBMITTED: "문의 등록",
   INQUIRY_READ: "문의 확인",
+  INQUIRY_REPLIED: "문의 답장",
   WELCOME_EMAIL_SENT: "가입환영 메일 발송",
   USER_DELETED: "계정 삭제",
   FILE_DOWNLOADED: "논문 파일 다운로드",

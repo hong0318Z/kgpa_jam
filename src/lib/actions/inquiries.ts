@@ -35,6 +35,8 @@ export async function submitInquiry(
     },
   });
 
+  // 접수 시점에는 메일을 보내지 않는다. 사이트(관리자 문의 내역/해야 할 일)에서
+  // 확인하고, 답장을 보낼 때만 문의자에게 메일로 안내한다.
   await logAudit({
     actorId: session?.user?.id ?? null,
     action: "INQUIRY_SUBMITTED",
@@ -43,47 +45,8 @@ export async function submitInquiry(
     metadata: { name, email, subject },
   });
 
-  void notifyAdmins(inquiry);
-
   revalidatePath("/admin/inquiries");
   return { success: "문의가 접수되었습니다. 빠른 시일 내에 답변드리겠습니다." };
-}
-
-async function notifyAdmins(inquiry: {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  subject: string;
-  message: string;
-}) {
-  const admins = await prisma.user.findMany({
-    where: { role: "ADMIN", isActive: true },
-    select: { email: true },
-  });
-
-  const html = `
-    <p>새 문의가 접수되었습니다.</p>
-    <p><b>이름:</b> ${escapeHtml(inquiry.name)}<br/>
-    <b>이메일:</b> ${escapeHtml(inquiry.email)}<br/>
-    ${inquiry.phone ? `<b>연락처:</b> ${escapeHtml(inquiry.phone)}<br/>` : ""}
-    <b>제목:</b> ${escapeHtml(inquiry.subject)}</p>
-    <p style="white-space:pre-wrap">${escapeHtml(inquiry.message)}</p>
-    <p><a href="${process.env.NEXTAUTH_URL ?? ""}/admin/inquiries">관리자 페이지에서 확인하기</a></p>
-  `;
-
-  for (const admin of admins) {
-    try {
-      await sendMail({
-        to: admin.email,
-        subject: `[문의 접수] ${inquiry.subject}`,
-        html,
-        templateKey: "inquiry_notification",
-      });
-    } catch (e) {
-      console.error("[inquiries] admin notification failed:", admin.email, e);
-    }
-  }
 }
 
 function escapeHtml(s: string) {
@@ -95,6 +58,9 @@ function escapeHtml(s: string) {
 
 export async function markInquiryRead(id: string) {
   const session = await requireRole(ADMIN_ROLES);
+
+  const inquiry = await prisma.inquiry.findUnique({ where: { id }, select: { status: true } });
+  if (inquiry?.status !== "NEW") return;
 
   await prisma.inquiry.update({
     where: { id },
@@ -109,4 +75,62 @@ export async function markInquiryRead(id: string) {
   });
 
   revalidatePath("/admin/inquiries");
+}
+
+export async function replyToInquiry(
+  id: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const replyMessage = String(formData.get("replyMessage") ?? "").trim();
+  if (!replyMessage) return { error: "답장 내용을 입력해 주세요." };
+
+  const inquiry = await prisma.inquiry.findUnique({ where: { id } });
+  if (!inquiry) return { error: "존재하지 않는 문의입니다." };
+
+  await prisma.inquiry.update({
+    where: { id },
+    data: {
+      replyMessage,
+      repliedAt: new Date(),
+      repliedById: session.user.id,
+      status: "REPLIED",
+      readAt: inquiry.readAt ?? new Date(),
+      readById: inquiry.readById ?? session.user.id,
+    },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "INQUIRY_REPLIED",
+    targetType: "Inquiry",
+    targetId: id,
+    metadata: { email: inquiry.email, subject: inquiry.subject },
+  });
+
+  const html = `
+    <p>${escapeHtml(inquiry.name)}님, 문의하신 내용에 답변드립니다.</p>
+    <p><b>문의 제목:</b> ${escapeHtml(inquiry.subject)}</p>
+    <p style="white-space:pre-wrap;color:#555">${escapeHtml(inquiry.message)}</p>
+    <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0" />
+    <p style="white-space:pre-wrap">${escapeHtml(replyMessage)}</p>
+  `;
+
+  try {
+    await sendMail({
+      to: inquiry.email,
+      subject: `[답변] ${inquiry.subject}`,
+      html,
+      templateKey: "inquiry_reply",
+    });
+  } catch (e) {
+    console.error("[inquiries] reply notification failed:", inquiry.email, e);
+    revalidatePath("/admin/inquiries");
+    return { error: "답장은 저장됐지만 메일 발송에 실패했습니다. 메일 발송 내역을 확인해 주세요." };
+  }
+
+  revalidatePath("/admin/inquiries");
+  return { success: "답장을 저장하고 문의자에게 메일을 보냈습니다." };
 }
