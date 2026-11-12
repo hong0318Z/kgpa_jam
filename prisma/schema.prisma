@@ -91,6 +91,7 @@ model User {
   siteSettingsUpdated SiteSettings[]   @relation("SiteSettingsUpdater")
   feeSettingsUpdated  FeeSettings[]    @relation("FeeSettingsUpdater")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdater")
+  volumeMaterialsUploaded VolumeMaterial[] @relation("VolumeMaterialUploader")
   passwordResetCodes    PasswordResetCode[] @relation("PasswordResetCodeUser")
 }
 
@@ -127,6 +128,23 @@ model Volume {
   updatedAt          DateTime     @updatedAt
 
   submissions Submission[]
+  materials   VolumeMaterial[]
+}
+
+model VolumeMaterial {
+  id           String   @id @default(cuid())
+  volumeId     String
+  volume       Volume   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  title        String
+  storedPath   String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  uploadedById String?
+  uploadedBy   User?    @relation("VolumeMaterialUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([volumeId])
 }
 
 model Submission {
@@ -312,6 +330,9 @@ model SiteSettings {
   maintenanceMode Boolean  @default(true)
   conferenceEnabled  Boolean  @default(false)
   conferenceInfoText String?
+  conferenceImageStoredPath String?
+  conferenceImageMimeType   String?
+  conferenceImageSizeBytes  Int?
   ogTitle              String?
   ogDescription        String?
   ogImageStoredPath    String?

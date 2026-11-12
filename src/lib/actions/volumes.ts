@@ -19,6 +19,7 @@ function parseFormats(formData: FormData): ConferenceFormat[] {
 }
 
 const ALLOWED_EXT = [".pdf"];
+const MATERIAL_ALLOWED_EXT = [".pdf", ".ppt", ".pptx"];
 const INFO_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type InfoImageResult =
@@ -260,5 +261,73 @@ export async function deleteVolume(volumeId: string): Promise<{ error?: string }
 
   revalidatePath("/admin/volumes");
   revalidatePath("/journal");
+  return {};
+}
+
+export async function addVolumeMaterial(
+  volumeId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const title = String(formData.get("title") ?? "").trim();
+  const file = formData.get("file");
+
+  if (!title) return { error: "자료 제목을 입력해 주세요." };
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "파일을 첨부해 주세요." };
+  }
+  if (!MATERIAL_ALLOWED_EXT.includes(path.extname(file.name).toLowerCase())) {
+    return { error: "PDF, PPT, PPTX 파일만 업로드할 수 있습니다." };
+  }
+  if (file.size > 100 * 1024 * 1024) {
+    return { error: "파일 크기는 100MB를 초과할 수 없습니다." };
+  }
+
+  const saved = await saveUploadedFile(`volumes/${volumeId}/materials`, file);
+  await prisma.volumeMaterial.create({
+    data: {
+      volumeId,
+      title,
+      uploadedById: session.user.id,
+      ...saved,
+    },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "VOLUME_UPDATED",
+    targetType: "Volume",
+    targetId: volumeId,
+    metadata: { materialUploaded: title },
+  });
+
+  revalidatePath("/admin/volumes");
+  revalidatePath("/conference");
+  revalidatePath(`/journal/${volumeId}`);
+  return { success: "발표자료가 업로드되었습니다." };
+}
+
+export async function deleteVolumeMaterial(materialId: string): Promise<{ error?: string }> {
+  const session = await requireRole(ADMIN_ROLES);
+
+  const material = await prisma.volumeMaterial.findUnique({ where: { id: materialId } });
+  if (!material) return { error: "이미 삭제된 자료입니다." };
+
+  await prisma.volumeMaterial.delete({ where: { id: materialId } });
+  await deleteStoredFile(material.storedPath);
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "VOLUME_UPDATED",
+    targetType: "Volume",
+    targetId: material.volumeId,
+    metadata: { materialDeleted: material.title },
+  });
+
+  revalidatePath("/admin/volumes");
+  revalidatePath("/conference");
+  revalidatePath(`/journal/${material.volumeId}`);
   return {};
 }

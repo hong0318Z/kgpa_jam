@@ -5,10 +5,14 @@ import { updateVolumeStatus } from "@/lib/actions/volumes";
 import { CompiledVolumeUploadForm } from "./compiled-volume-upload-form";
 import { DeleteVolumeButton } from "./delete-volume-button";
 import { VolumeDatesForm } from "./volume-dates-form";
+import { VolumeMaterialsManager } from "./volume-materials-manager";
 
 export default async function AdminVolumesPage() {
   await requireRole(ADMIN_ROLES);
-  const volumes = await prisma.volume.findMany({ orderBy: { callStartDate: "desc" } });
+  const volumes = await prisma.volume.findMany({
+    orderBy: { callStartDate: "desc" },
+    include: { materials: { orderBy: { createdAt: "asc" } } },
+  });
 
   return (
     <div>
@@ -28,6 +32,7 @@ export default async function AdminVolumesPage() {
             <th className="px-4 py-2">모집기간 · 발간예정일</th>
             <th className="px-4 py-2">상태</th>
             <th className="px-4 py-2">학술지 합본 파일</th>
+            <th className="px-4 py-2">발표자료</th>
             <th className="px-4 py-2"></th>
           </tr>
         </thead>
@@ -90,6 +95,13 @@ export default async function AdminVolumesPage() {
                   </a>
                 )}
                 <CompiledVolumeUploadForm volumeId={v.id} />
+              </td>
+              <td className="px-4 py-2">
+                {v.type === "CONFERENCE" ? (
+                  <VolumeMaterialsManager volumeId={v.id} materials={v.materials} />
+                ) : (
+                  <span className="text-xs text-gray-400">학술대회 전용</span>
+                )}
               </td>
               <td className="px-4 py-2">
                 <DeleteVolumeButton volumeId={v.id} label={v.label} />

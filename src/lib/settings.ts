@@ -22,6 +22,7 @@ export async function getConferenceSettings() {
   return {
     enabled: settings?.conferenceEnabled ?? false,
     infoText: settings?.conferenceInfoText ?? "",
+    imageStoredPath: settings?.conferenceImageStoredPath ?? null,
   };
 }
 

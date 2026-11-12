@@ -3,6 +3,7 @@ import { getMaintenanceMode, getOgSettings, getConferenceSettings } from "@/lib/
 import { MaintenanceToggle } from "./maintenance-toggle";
 import { OgSettingsForm } from "./og-settings-form";
 import { ConferenceSettingsForm } from "./conference-settings-form";
+import { ConferenceToggle } from "./conference-toggle";
 
 export default async function AdminSettingsPage() {
   await requireRole(["ADMIN"]);
@@ -26,10 +27,14 @@ export default async function AdminSettingsPage() {
       <div className="mb-6 rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-1 text-sm font-semibold text-gray-900">학술대회 페이지</h2>
         <p className="mb-4 text-sm text-gray-500">
-          켜 두면 메인과 상단 메뉴에 &quot;학술대회&quot;가 노출됩니다. 투고를 받으려면 발행 호
-          관리에서 구분을 &quot;학술대회&quot;로 호를 등록해 주세요.
+          켜 두면 메인과 상단 메뉴에 &quot;학술대회&quot;가 노출됩니다. 학술대회를 치를 때마다
+          활성화하고, 끝나면 비활성화해 두는 식으로 전환해서 쓸 수 있습니다. 투고를 받으려면
+          발행 호 관리에서 구분을 &quot;학술대회&quot;로 호를 등록해 주세요.
         </p>
-        <ConferenceSettingsForm enabled={conference.enabled} infoText={conference.infoText} />
+        <ConferenceToggle enabled={conference.enabled} />
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <ConferenceSettingsForm infoText={conference.infoText} hasImage={!!conference.imageStoredPath} />
+        </div>
       </div>
 
       <div className="rounded border border-gray-200 bg-white p-6">

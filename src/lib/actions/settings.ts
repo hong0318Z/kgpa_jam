@@ -27,34 +27,73 @@ export async function setMaintenanceMode(maintenanceMode: boolean) {
   revalidatePath("/admin/settings");
 }
 
-export async function updateConferenceSettings(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
+export async function setConferenceEnabled(conferenceEnabled: boolean) {
   const session = await requireRole(["ADMIN"]);
-
-  const conferenceEnabled = formData.get("conferenceEnabled") === "on";
-  const conferenceInfoText = String(formData.get("conferenceInfoText") ?? "").trim();
 
   await prisma.siteSettings.upsert({
     where: { id: SETTINGS_ID },
-    create: {
-      id: SETTINGS_ID,
-      conferenceEnabled,
-      conferenceInfoText: conferenceInfoText || null,
-      updatedById: session.user.id,
-    },
-    update: {
-      conferenceEnabled,
-      conferenceInfoText: conferenceInfoText || null,
-      updatedById: session.user.id,
-    },
+    create: { id: SETTINGS_ID, conferenceEnabled, updatedById: session.user.id },
+    update: { conferenceEnabled, updatedById: session.user.id },
   });
 
   await logAudit({
     actorId: session.user.id,
     action: "SITE_CONFERENCE_SETTINGS_UPDATED",
     metadata: { conferenceEnabled },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/conference");
+  revalidatePath("/admin/settings");
+}
+
+export async function updateConferenceSettings(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireRole(["ADMIN"]);
+
+  const conferenceInfoText = String(formData.get("conferenceInfoText") ?? "").trim();
+  const file = formData.get("conferenceImage");
+
+  const data: {
+    conferenceInfoText: string | null;
+    updatedById: string;
+    conferenceImageStoredPath?: string;
+    conferenceImageMimeType?: string;
+    conferenceImageSizeBytes?: number;
+  } = {
+    conferenceInfoText: conferenceInfoText || null,
+    updatedById: session.user.id,
+  };
+
+  if (file instanceof File && file.size > 0) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      return { error: "JPG, PNG, WEBP 이미지만 업로드할 수 있습니다." };
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { error: "이미지 크기는 10MB를 초과할 수 없습니다." };
+    }
+    const current = await prisma.siteSettings.findUnique({ where: { id: SETTINGS_ID } });
+    if (current?.conferenceImageStoredPath) {
+      await deleteStoredFile(current.conferenceImageStoredPath);
+    }
+    const saved = await saveUploadedImage("conference", file);
+    data.conferenceImageStoredPath = saved.storedPath;
+    data.conferenceImageMimeType = saved.mimeType;
+    data.conferenceImageSizeBytes = saved.sizeBytes;
+  }
+
+  await prisma.siteSettings.upsert({
+    where: { id: SETTINGS_ID },
+    create: { id: SETTINGS_ID, ...data },
+    update: data,
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "SITE_CONFERENCE_SETTINGS_UPDATED",
+    metadata: { conferenceInfoText: conferenceInfoText || null },
   });
 
   revalidatePath("/");

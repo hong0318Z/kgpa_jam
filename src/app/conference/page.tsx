@@ -9,13 +9,18 @@ import { ADMIN_ROLES } from "@/lib/rbac";
 import { rotatePosterFile } from "@/lib/actions/conference";
 
 export default async function ConferencePage() {
-  const { enabled, infoText } = await getConferenceSettings();
+  const { enabled, infoText, imageStoredPath } = await getConferenceSettings();
   if (!enabled) notFound();
 
   const session = await auth();
   const isAdmin = !!session?.user && ADMIN_ROLES.includes(session.user.role);
   const openVolumes = await prisma.volume.findMany({
     where: { type: "CONFERENCE", status: "OPEN" },
+    orderBy: { callStartDate: "desc" },
+  });
+  const volumesWithMaterials = await prisma.volume.findMany({
+    where: { type: "CONFERENCE", materials: { some: {} } },
+    include: { materials: { orderBy: { createdAt: "asc" } } },
     orderBy: { callStartDate: "desc" },
   });
   const allPosters = await prisma.submission.findMany({
@@ -41,6 +46,14 @@ export default async function ConferencePage() {
     <div className="flex flex-col gap-8">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h1 className="text-2xl font-bold text-gray-900">학술대회</h1>
+        {imageStoredPath && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/api/site/conference-image"
+            alt="학술대회 메인 포스터"
+            className="mt-3 max-h-[600px] w-auto max-w-full rounded border border-gray-200"
+          />
+        )}
         {infoText && (
           <p className="mt-3 whitespace-pre-wrap text-sm text-gray-700">{infoText}</p>
         )}
@@ -81,6 +94,31 @@ export default async function ConferencePage() {
           <p className="mt-3 text-sm text-gray-500">현재 투고를 받고 있지 않습니다.</p>
         )}
       </section>
+
+      {volumesWithMaterials.length > 0 && (
+        <section className="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">발표자료</h2>
+          <div className="flex flex-col gap-4">
+            {volumesWithMaterials.map((v) => (
+              <div key={v.id}>
+                <p className="mb-1 text-sm font-medium text-gray-900">{v.label}</p>
+                <ul className="divide-y divide-gray-200 rounded border border-gray-200">
+                  {v.materials.map((m) => (
+                    <li key={m.id} className="px-3 py-2 text-sm">
+                      <a
+                        href={`/api/volumes/materials/${m.id}`}
+                        className="text-blue-600 underline"
+                      >
+                        {m.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-gray-900">게재된 포스터 · 논문</h2>
