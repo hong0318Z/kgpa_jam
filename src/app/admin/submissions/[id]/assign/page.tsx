@@ -306,6 +306,11 @@ export default async function AssignReviewerPage({
                       {overdue ? "마감 초과" : dueSoon ? "마감 임박" : "마감"}: {formatDate(a.dueDate)}
                     </span>
                   )}
+                  {a.status !== "SUBMITTED" && (
+                    <Link href={`/reviews/${a.id}`} className="text-xs text-indigo-600 hover:underline">
+                      대신 작성
+                    </Link>
+                  )}
                   <form
                     action={async () => {
                       "use server";

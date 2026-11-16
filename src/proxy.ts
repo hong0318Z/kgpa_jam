@@ -24,7 +24,10 @@ export default auth((req) => {
   if (pathname.startsWith("/admin") && !(role && ADMIN_ROLES.includes(role))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  if (pathname.startsWith("/reviews") && !(role && REVIEW_ROLES.includes(role))) {
+  if (
+    pathname.startsWith("/reviews") &&
+    !(role && (REVIEW_ROLES.includes(role) || ADMIN_ROLES.includes(role)))
+  ) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
   if (pathname.startsWith("/submissions") && !req.auth?.user) {

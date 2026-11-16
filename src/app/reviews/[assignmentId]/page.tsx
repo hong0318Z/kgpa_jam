@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireRole, REVIEW_ROLES } from "@/lib/rbac";
+import { requireSession, ADMIN_ROLES, REVIEW_ROLES } from "@/lib/rbac";
 import { notFound, redirect } from "next/navigation";
 import { ReviewForm } from "./review-form";
 import { formatDate, formatDateTime } from "@/lib/date";
@@ -14,7 +14,10 @@ export default async function ReviewDetailPage({
   params: Promise<{ assignmentId: string }>;
 }) {
   const { assignmentId } = await params;
-  const session = await requireRole(REVIEW_ROLES);
+  const session = await requireSession();
+  if (!REVIEW_ROLES.includes(session.user.role) && !ADMIN_ROLES.includes(session.user.role)) {
+    redirect("/forbidden");
+  }
 
   const assignment = await prisma.reviewAssignment.findUnique({
     where: { id: assignmentId },
@@ -27,10 +30,13 @@ export default async function ReviewDetailPage({
         },
       },
       review: true,
+      reviewer: true,
     },
   });
   if (!assignment) notFound();
-  if (assignment.reviewerId !== session.user.id) {
+  const isOwner = assignment.reviewerId === session.user.id;
+  const isAdminOnBehalf = !isOwner && ADMIN_ROLES.includes(session.user.role);
+  if (!isOwner && !isAdminOnBehalf) {
     redirect("/forbidden");
   }
 
@@ -244,6 +250,12 @@ export default async function ReviewDetailPage({
 
       <div className="rounded border border-gray-200 bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">심사 평가</h2>
+        {isAdminOnBehalf && (
+          <p className="mb-3 rounded bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+            관리자 권한으로 심사위원({assignment.reviewer.name})을 대신해 작성합니다. 제출하면
+            해당 심사위원이 직접 작성한 것으로 기록됩니다.
+          </p>
+        )}
         <ReviewForm
           assignmentId={assignment.id}
           submitted={assignment.status === "SUBMITTED"}
