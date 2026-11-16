@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/rbac";
-import { getMaintenanceMode, getOgSettings, getConferenceSettings } from "@/lib/settings";
+import { getMaintenanceMode, getMailEnabled, getOgSettings, getConferenceSettings } from "@/lib/settings";
 import { MaintenanceToggle } from "./maintenance-toggle";
+import { MailToggle } from "./mail-toggle";
 import { OgSettingsForm } from "./og-settings-form";
 import { ConferenceSettingsForm } from "./conference-settings-form";
 import { ConferenceToggle } from "./conference-toggle";
@@ -8,6 +9,7 @@ import { ConferenceToggle } from "./conference-toggle";
 export default async function AdminSettingsPage() {
   await requireRole(["ADMIN"]);
   const maintenanceMode = await getMaintenanceMode();
+  const mailEnabled = await getMailEnabled();
   const og = await getOgSettings();
   const conference = await getConferenceSettings();
 
@@ -22,6 +24,16 @@ export default async function AdminSettingsPage() {
           경로에서 항상 확인할 수 있습니다.
         </p>
         <MaintenanceToggle maintenanceMode={maintenanceMode} />
+      </div>
+
+      <div className="mb-6 rounded border border-gray-200 bg-white p-6">
+        <h2 className="mb-1 text-sm font-semibold text-gray-900">메일 발송</h2>
+        <p className="mb-4 text-sm text-gray-500">
+          꺼 두면 회원가입·심사배정·게재결정·비밀번호 재설정 등 모든 자동 메일이 실제로는
+          나가지 않고 메일 발송 내역에 &quot;건너뜀&quot;으로만 기록됩니다. 메일 서버 점검이나
+          테스트 중에 잠시 꺼두는 용도입니다.
+        </p>
+        <MailToggle mailEnabled={mailEnabled} />
       </div>
 
       <div className="mb-6 rounded border border-gray-200 bg-white p-6">

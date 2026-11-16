@@ -27,6 +27,24 @@ export async function setMaintenanceMode(maintenanceMode: boolean) {
   revalidatePath("/admin/settings");
 }
 
+export async function setMailEnabled(mailEnabled: boolean) {
+  const session = await requireRole(["ADMIN"]);
+
+  await prisma.siteSettings.upsert({
+    where: { id: SETTINGS_ID },
+    create: { id: SETTINGS_ID, mailEnabled, updatedById: session.user.id },
+    update: { mailEnabled, updatedById: session.user.id },
+  });
+
+  await logAudit({
+    actorId: session.user.id,
+    action: "MAIL_ENABLED_CHANGED",
+    metadata: { mailEnabled },
+  });
+
+  revalidatePath("/admin/settings");
+}
+
 export async function setConferenceEnabled(conferenceEnabled: boolean) {
   const session = await requireRole(["ADMIN"]);
 

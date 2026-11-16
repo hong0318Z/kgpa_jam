@@ -7,6 +7,11 @@ export async function getMaintenanceMode(): Promise<boolean> {
   return settings?.maintenanceMode ?? true;
 }
 
+export async function getMailEnabled(): Promise<boolean> {
+  const settings = await prisma.siteSettings.findUnique({ where: { id: SETTINGS_ID } });
+  return settings?.mailEnabled ?? true;
+}
+
 export async function getOgSettings() {
   const settings = await prisma.siteSettings.findUnique({ where: { id: SETTINGS_ID } });
   return {

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
+import { getMailEnabled } from "@/lib/settings";
 
 function htmlToPlainText(html: string) {
   return html
@@ -46,6 +47,19 @@ export async function sendMail({
   html: string;
   templateKey?: string;
 }) {
+  if (!(await getMailEnabled())) {
+    await prisma.mailLog.create({
+      data: {
+        templateKey,
+        to,
+        subject,
+        status: "SKIPPED",
+        error: "관리자가 메일 발송 기능을 꺼 두어 건너뛰었습니다.",
+      },
+    });
+    return;
+  }
+
   const recipient = await prisma.user.findUnique({
     where: { email: to },
     select: { isTestAccount: true },

@@ -377,6 +377,7 @@ model Policy {
 model SiteSettings {
   id              String   @id @default("singleton")
   maintenanceMode Boolean  @default(true)
+  mailEnabled     Boolean  @default(true)
   conferenceEnabled  Boolean  @default(false)
   conferenceInfoText String?
   conferenceImageStoredPath String?
